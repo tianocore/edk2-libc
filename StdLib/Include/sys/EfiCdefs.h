@@ -22,7 +22,7 @@
     This file and its contents are inspired by the <sys/cdefs.h> files in Berkeley
     Unix.  They have been re-implemented to be specific to the EFI environment.
 
-    Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2010 - 2019, Intel Corporation. All rights reserved.<BR>
     This program and the accompanying materials are licensed and made available under
     the terms and conditions of the BSD License that accompanies this distribution.
     The full text of the license may be found at
@@ -339,7 +339,9 @@
 
   #define __STDC__            1
   #define __STDC_VERSION__    199409L
+  #ifndef __STDC_HOSTED__
   #define __STDC_HOSTED__     1
+  #endif
 
 #endif  /* defined(_MSC_VER) */
 extern int _fltused;    // VC++ requires this if you use floating point.  KEEP for all compilers.
