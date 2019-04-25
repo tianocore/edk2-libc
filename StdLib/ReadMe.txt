@@ -129,18 +129,30 @@ The Standard C Library provided by this package is a "hosted" implementation
 conforming to the ISO/IEC 9899-1990 C Language Standard with Addendum 1. This
 is commonly referred to as the "C 95" specification or ISO/IEC 9899:199409.
 The following instructions assume that you have an existing EDK II or UDK 2010
-source tree that has been configured to build with your tool chain.  For
-convenience, it is assumed that your EDK II source tree is located at
-C:\Source\Edk2.
-
+source tree that has been configured to build with your tool chain.
 
 EADK INSTALLATION
 =================
-The EADK is integrated within the EDK II source tree and is included with
-current EDK II check-outs.  If they are missing from your tree, they may be
-installed by extracting, downloading or copying them to the root of your EDK II
-source tree.  The three package directories should be peers to the Conf,
-MdePkg, Nt32Pkg, etc. directories.
+The EADK depends on the EDK II source tree and need to be installed with
+the EDK II check-outs.  The commands below show an example of setting up a
+WORKSPACE with both the edk2 and edk2-libc repositories.  It sets environment
+variables that must be set before running ```edksetup.bat```. Since content is
+being pulled from multiple repositories, the EDK II
+[Multiple Workspace](https://github.com/tianocore/tianocore.github.io/wiki/Multiple_Workspace)
+feature is used.
+
+```
+git clone https://github.com/tianocore/edk2.git
+git clone https://github.com/tianocore/edk2-libc.git
+
+set WORKSPACE=%CD%
+set PACKAGES_PATH=%WORKSPACE%\edk2-libc;%WORKSPACE%\edk2
+set EDK_TOOLS_PATH=%WORKSPACE%\edk2\BaseTools
+
+cd %WORKSPACE%\edk2
+
+edksetup.bat Rebuild
+```
 
 There are some boiler-plate declarations and definitions that need to be
 included in your application's INF and DSC build files.  These are described
@@ -164,12 +176,14 @@ USAGE, below; the required libraries will be built as needed.
 To build the applications included in AppPkg, one would execute the following
 commands within the "Visual Studio Command Prompt" window:
 
-    > cd C:\Source\Edk2
-    > .\edksetup.bat
-    > build -a X64 -p AppPkg\AppPkg.dsc
+```
+cd %WORKSPACE%\edk2
+edksetup.bat
+build -a X64 -p AppPkg\AppPkg.dsc
+```
 
 This will produce the application executables: Enquire.efi, Hello.efi, and
-Main.efi in the C:\Source\Edk2\Build\AppPkg\DEBUG_VS2008\X64 directory; with
+Main.efi in the %WORKSPACE%\edk2\Build\AppPkg\DEBUG_VS2008\X64 directory; with
 the DEBUG_VS2008 component being replaced with the actual tool chain and build
 type you have selected in Conf\Tools_def.txt. These executables can now be
 loaded onto the target platform and executed.
