@@ -420,7 +420,7 @@ Note that the set of BuildOptions used is determined by the state of the EMULATE
   !else
     # The Build Options, below, are only used when building the Standard Libraries
     # to be run under an emulation environment.
-    # They disable optimization which facillitates debugging under the Emulation environment.
+    # They disable optimization which facilitates debugging under the Emulation environment.
     INTEL:*_*_IA32_CC_FLAGS  = /Od
      MSFT:*_*_IA32_CC_FLAGS  = /Od
       GCC:*_*_IA32_CC_FLAGS  = -O0

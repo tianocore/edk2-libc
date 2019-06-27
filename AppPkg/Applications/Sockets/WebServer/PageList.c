@@ -42,7 +42,7 @@ CONST DT_PAGE mPageList[] = {
   { L"/MTRRs", MemoryTypeRegistersPage, L"Memory Type Range Registers" }, ///<  Memory type range register table
 #endif  //  Intel
   { L"/Ports", PortsPage, L"Display web-server ports" },///<  Web-server ports page
-  { L"/Reboot", RebootPage, L"Reboot the sytem" },      ///<  Reboot page
+  { L"/Reboot", RebootPage, L"Reboot the system" },     ///<  Reboot page
   { PAGE_ACPI_RSDP_10B, AcpiRsdp10Page, L"RSDP 1.0b - ACPI Root System Description Pointer" },  ///<  Format RSDP 1.0b table
   { PAGE_ACPI_RSDP_30, AcpiRsdp30Page, L"RSDP 3.0 - ACPI Root System Description Pointer" },    ///<  Format RSDP 3.0 table
   { PAGE_ACPI_RSDT, AcpiRsdtPage, L"RSDT - ACPI Root System Description Table" },       ///<  Format RSDT

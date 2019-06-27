@@ -73,7 +73,7 @@ RebootPage (
     //
     //  Attempt to reboot the system
     //
-    DEBUG (( DEBUG_REQUEST, "Reseting System\r\n" ));
+    DEBUG (( DEBUG_REQUEST, "Resetting System\r\n" ));
     gRT->ResetSystem ( EfiResetCold,
                        EFI_SUCCESS,
                        0,

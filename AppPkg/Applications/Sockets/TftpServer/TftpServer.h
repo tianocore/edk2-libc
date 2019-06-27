@@ -125,7 +125,7 @@
 #define TFTP_OP_WRITE_REQUEST     2     ///<  Write request, zero terminated file name, zero terminated mode
 #define TFTP_OP_DATA              3     ///<  Data block, end-of-file indicated by short block
 #define TFTP_OP_ACK               4     ///<  ACK block number
-#define TFTP_OP_ERROR             5     ///<  Error number and explaination
+#define TFTP_OP_ERROR             5     ///<  Error number and explanation
 #define TFTP_OP_OACK              6     ///<  ACK the options
 
 #define TFTP_MAX_BLOCK_SIZE       4096  ///<  Maximum block size
@@ -194,7 +194,7 @@ typedef struct _TSDT_CONNECTION_CONTEXT {
   //
   UINT32 AckCount;              ///<  Number of ACKs to receive before increasing the window
   UINT32 PacketsInWindow;       ///<  Number of packets in the window
-  UINT32 Threshold;             ///<  Size of window when ACK count becomes logrithmic
+  UINT32 Threshold;             ///<  Size of window when ACK count becomes logarithmic
   UINT32 WindowSize;            ///<  Size of the transmit window
   UINT64 MaxTimeout;            ///<  Maximum number of seconds to wait before retransmission
   UINT64 Rtt2x;                 ///<  Twice the average round trip time in nanoseconds
@@ -226,7 +226,7 @@ typedef struct {
   UINT64 ClockFrequency;        ///<  Frequency of the clock
   UINT64 Time1;                 ///<  Clock value after rollover
   UINT64 Time2;                 ///<  Clock value before rollover
-  UINT64 RxTime;                ///<  Time when the packet was recevied
+  UINT64 RxTime;                ///<  Time when the packet was received
 
   //
   //  TFTP port management

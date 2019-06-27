@@ -402,7 +402,7 @@ HttpPageTrailer (
       RetVal = getpeername ( SocketFD, (struct sockaddr *)&RemoteAddress, &LengthInBytes );
       if ( 0 == RetVal ) {
         //
-        //  Seperate the body from the trailer
+        //  Separate the body from the trailer
         //
         Status = HttpSendAnsiString ( SocketFD, pPort, "  <hr>\r\n<code>" );
         if ( EFI_ERROR ( Status )) {
