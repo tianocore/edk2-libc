@@ -867,7 +867,7 @@ Tcp4Close (
   Locate TCP protocol
 
   @retval EFI_SUCCESS   Protocol found
-  @retval other         Protocl not found
+  @retval other         Protocol not found
 **/
 EFI_STATUS
 Tcp4Locate (
@@ -964,7 +964,7 @@ Tcp4Locate (
               Tcp4Handle ));
 
     //
-    //  Locate the TCP protcol
+    //  Locate the TCP protocol
     //
     Status = gBS->OpenProtocol ( Tcp4Handle,
                                  &gEfiTcp4ProtocolGuid,

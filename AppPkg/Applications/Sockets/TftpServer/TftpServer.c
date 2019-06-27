@@ -70,7 +70,7 @@ BufferFill (
     pContext->BytesRemaining -= BytesRead;
     pContext->ValidBytes += BytesRead;
     DEBUG (( DEBUG_FILE_BUFFER,
-              "0x%08x: Buffer filled with %Ld bytes, %Ld bytes ramaining\r\n",
+              "0x%08x: Buffer filled with %Ld bytes, %Ld bytes remaining\r\n",
               pContext->pFill,
               BytesRead,
               pContext->BytesRemaining ));
@@ -653,7 +653,7 @@ PacketTx (
     //  Display the operation
     //
     DEBUG (( DEBUG_TX_PACKET,
-              "0x%08x: Packet transmiting\r\n",
+              "0x%08x: Packet transmitting\r\n",
               pPacket ));
     DEBUG (( DEBUG_TX,
               "0x%08x: pContext sending 0x%08x bytes\r\n",
@@ -1218,7 +1218,7 @@ TftpOptionSet (
   NextValue = Value / 10;
 
   //
-  //  Supress leading zeros
+  //  Suppress leading zeros
   //
   if ( 0 != NextValue ) {
     pOack = TftpOptionSet ( pOack, NextValue );
@@ -1878,7 +1878,7 @@ TftpRead (
   the network stack.
 
   @param [in] pTftpServer   Address of the ::TSDT_TFTP_SERVER structure
-  @param [in] AddressFamily The address family to use for the conection.
+  @param [in] AddressFamily The address family to use for the connection.
   @param [in] pIndex        Address of the index into the port array
 
 **/
@@ -2291,7 +2291,7 @@ main (
             TFTP_PACKET * pPacket;
 
             //
-            //  High speed TFTP uses an agressive retransmit to
+            //  High speed TFTP uses an aggressive retransmit to
             //  get the TFTP client moving again when the ACK or
             //  previous data packet was lost.
             //
