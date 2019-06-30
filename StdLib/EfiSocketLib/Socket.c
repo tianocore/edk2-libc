@@ -177,7 +177,7 @@
 
   The receive engine is the state machine which reads data from the network and
   fills the queue with received packets.  The receive engine uses two data structures
-  to manage the network receive opeations and the buffers.
+  to manage the network receive operations and the buffers.
 
   At a high level, the ::ESL_IO_MGMT structures are managing the tokens and
   events for the interface to the UEFI network stack.  The ::ESL_PACKET
@@ -263,7 +263,7 @@
   ::EslSocketRxStart connects an ::ESL_PACKET structure to the ::ESL_IO_MGMT structure
   and then calls the network layer to start the receive operation.  Upon
   receive completion, ::EslSocketRxComplete breaks the connection between these
-  structrues and places the ESL_IO_MGMT structure onto the ESL_PORT::pRxFree list to
+  structures and places the ESL_IO_MGMT structure onto the ESL_PORT::pRxFree list to
   make token and event available for another receive operation.  EslSocketRxComplete
   then queues the ESL_PACKET structure (data packet) to either the
   ESL_SOCKET::pRxOobPacketListTail or ESL_SOCKET::pRxPacketListTail depending on
@@ -1802,7 +1802,7 @@ EslSocketConnect (
 
   @param[in]  FragmentCount   Number of fragments in the table
   @param[in]  pFragmentTable  Address of an EFI_IP4_FRAGMENT_DATA structure
-  @param[in]  BufferLength    Length of the the buffer
+  @param[in]  BufferLength    Length of the buffer
   @param[in]  pBuffer         Address of a buffer to receive the data.
   @param[in]  pDataLength     Number of received data bytes in the buffer.
 
@@ -4326,7 +4326,7 @@ EslSocketPortCloseTxDone (
 
   @param[in]      pSocketProtocol Address of an ::EFI_SOCKET_PROTOCOL structure.
   @param[in]      Flags           Message control flags
-  @param[in]      BufferLength    Length of the the buffer
+  @param[in]      BufferLength    Length of the buffer
   @param[in]      pBuffer         Address of a buffer to receive the data.
   @param[in]      pDataLength     Number of received data bytes in the buffer.
   @param[out]     pAddress        Network address to receive the remote system address
@@ -5299,7 +5299,7 @@ EslSocketShutdown (
 
   @param[in]  pSocketProtocol Address of an ::EFI_SOCKET_PROTOCOL structure.
   @param[in]  Flags           Message control flags
-  @param[in]  BufferLength    Length of the the buffer
+  @param[in]  BufferLength    Length of the buffer
   @param[in]  pBuffer         Address of a buffer containing the data to send
   @param[in]  pDataLength     Address to receive the number of data bytes sent
   @param[in]  pAddress        Network address of the remote system address

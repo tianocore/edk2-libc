@@ -70,7 +70,7 @@ dirname(char *path)
   while (lastp != path && isDirSep(*lastp))
     lastp--;
 
-  /* Terminate path at the last occurence of '/'. */
+  /* Terminate path at the last occurrence of '/'. */
   do {
     if (isDirSep(*lastp)) {
       /* Strip trailing slashes, if any. */

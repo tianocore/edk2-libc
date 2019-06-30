@@ -353,7 +353,7 @@ int       rename  (const char *OldName, const char *NewName);
 /** Create a guaranteed unique temporary file.
     A binary file is created in the _PATH_TMP directory that is guaranteed to
     have a unique name.  The file will be open for update with mode "wb+" and
-    its FILE pointer returned upon successfull completion.  When the file is
+    its FILE pointer returned upon successful completion.  When the file is
     closed, or when the creating program terminates, the file will be removed.
 
     @retval   NULL      The temporary file could not be created.

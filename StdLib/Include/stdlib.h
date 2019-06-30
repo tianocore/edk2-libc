@@ -872,7 +872,7 @@ size_t  wcstombs(char * __restrict Dest, const wchar_t * __restrict Src, size_t 
     @param[in]      file_name         The filename to convert.
     @param[in,out]  resolved_name     The resultant name.
 
-    @retval NULL                    An error occured.
+    @retval NULL                    An error occurred.
     @retval resolved_name.
 **/
 char * realpath(char *file_name, char *resolved_name);

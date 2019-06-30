@@ -20,7 +20,7 @@
 extern EFI_COMPONENT_NAME_PROTOCOL mComponentName;    ///<  Component name protocol declaration
 extern EFI_COMPONENT_NAME2_PROTOCOL mComponentName2;  ///<  Component name 2 protocol declaration
 extern EFI_DRIVER_BINDING_PROTOCOL mDriverBinding;    ///<  Driver binding protocol declaration
-extern EFI_SERVICE_BINDING_PROTOCOL mServiceBinding;  ///<  Service binding protocol delcaration
+extern EFI_SERVICE_BINDING_PROTOCOL mServiceBinding;  ///<  Service binding protocol declaration
 
 //------------------------------------------------------------------------------
 // Driver Binding Protocol Support

@@ -53,7 +53,7 @@ __RCSID("$NetBSD: k_rem_pio2.c,v 1.11 2003/01/04 23:43:03 wiz Exp $");
  *      64-bit  precision 2
  *      113-bit precision 3
  *    The actual value is the sum of them. Thus for 113-bit
- *    precison, one may have to do something like:
+ *    precision, one may have to do something like:
  *
  *    long double t,w,r_head, r_tail;
  *    t = (long double)y[2] + (long double)y[1];

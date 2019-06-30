@@ -66,7 +66,7 @@ __ieee754_sinh(double x)
     /* |x| in [22, log(maxdouble)] return 0.5*exp(|x|) */
   if (ix < 0x40862E42)  return h*__ieee754_exp(fabs(x));
 
-    /* |x| in [log(maxdouble), overflowthresold] */
+    /* |x| in [log(maxdouble), overflowthreshold] */
   GET_LOW_WORD(lx,x);
   if (ix<0x408633CE || ((ix==0x408633ce)&&(lx<=(u_int32_t)0x8fb9f87d))) {
       w = __ieee754_exp(0.5*fabs(x));
@@ -74,6 +74,6 @@ __ieee754_sinh(double x)
       return t*w;
   }
 
-    /* |x| > overflowthresold, sinh(x) overflow */
+    /* |x| > overflowthreshold, sinh(x) overflow */
   return x*shuge;
 }

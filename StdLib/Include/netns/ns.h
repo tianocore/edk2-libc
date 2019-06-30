@@ -63,7 +63,7 @@
 #define NSPORT_RE	3		/* Router Error */
 
 /*
- * Ports < NSPORT_RESERVED are reserved for priveleged
+ * Ports < NSPORT_RESERVED are reserved for privileged
  * processes (e.g. root).
  */
 #define NSPORT_RESERVED		3000

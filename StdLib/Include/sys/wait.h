@@ -37,7 +37,7 @@
 #include <sys/types.h>
 
 /*
- * This file holds definitions relevent to the wait4 system call
+ * This file holds definitions relevant to the wait4 system call
  * and the alternate interfaces that use it (wait, wait3, waitpid).
  */
 

@@ -108,7 +108,7 @@ static char rcsid[] = "$Id: res_comp.c,v 1.1.1.1 2003/11/19 01:51:35 kyu3 Exp $"
 
 /*
  * Expand compressed domain name 'comp_dn' to full domain name.
- * 'msg' is a pointer to the begining of the message,
+ * 'msg' is a pointer to the beginning of the message,
  * 'eomorig' points to the first location after the message,
  * 'exp_dn' is a pointer to a buffer of size 'length' for the result.
  * Return size of compressed name or -1 if there was an error.

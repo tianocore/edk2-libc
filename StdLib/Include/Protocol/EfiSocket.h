@@ -429,7 +429,7 @@ EFI_STATUS
   
   @param [in] Flags           Message control flags
   
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
   
   @param [in] pBuffer         Address of a buffer to receive the data.
   
@@ -532,7 +532,7 @@ EFI_STATUS
   
   @param [in] Flags           Message control flags
   
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
   
   @param [in] pBuffer         Address of a buffer containing the data to send
   

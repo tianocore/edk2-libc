@@ -76,14 +76,14 @@ static char *sccsid = "from: @(#)ctime.c	5.26 (Berkeley) 2/23/91";
 #include  <time.h>
 
 /*
-  This funciton is in Time.c, which has a different license than timegm.
+  This function is in Time.c, which has a different license than timegm.
 */
 time_t 
 time2(struct tm * const tmp, void (* const funcp)(const time_t*, long, struct tm*),
       const long offset, int * const okayp);
 
 /*
-  This funciton is in Time.c, which has a different license than timegm.
+  This function is in Time.c, which has a different license than timegm.
 */
 void
 gmtsub(

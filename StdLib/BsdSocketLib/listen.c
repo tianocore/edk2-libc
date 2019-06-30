@@ -50,7 +50,7 @@ listen (
                                           backlog,
                                           &errno );
   }
-  //  Return the operation stauts
+  //  Return the operation status
   ListenStatus = ( 0 == errno ) ? 0 : -1;
   return ListenStatus;
 }

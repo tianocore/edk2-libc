@@ -353,7 +353,7 @@ EslServiceNetworkDisconnect (
 
 
 /**
-  Socket layer's service binding protocol delcaration.
+  Socket layer's service binding protocol declaration.
 **/
 CONST EFI_SERVICE_BINDING_PROTOCOL mEfiServiceBinding __attribute__((weak)) = {
   NULL,

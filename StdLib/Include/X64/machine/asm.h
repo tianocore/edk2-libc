@@ -122,7 +122,7 @@
 #endif /* __STDC__ */
 
 /*
- * Assembley equivalent of spllower().  Label contains the label to jump to
+ * Assembly equivalent of spllower().  Label contains the label to jump to
  * if we need to fire off pending interrupts (e.g. _C_LABEL(Xspllower)).
  *
  * On entry %rcx = new SPL.

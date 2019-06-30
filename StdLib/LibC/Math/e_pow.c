@@ -1,5 +1,5 @@
 /** @file
-  Compute the base 10 logrithm of x.
+  Compute the base 10 logarithm of x.
 
   Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials are licensed and made available under

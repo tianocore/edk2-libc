@@ -1,5 +1,5 @@
 /** @file
-    Miscelaneous Functions for <wchar.h>.
+    Miscellaneous Functions for <wchar.h>.
 
   Unless explicitly stated otherwise, if the execution of a function declared
   in this file causes copying to take place between objects that overlap, the

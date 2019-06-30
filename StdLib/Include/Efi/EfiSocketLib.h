@@ -129,7 +129,7 @@
 // Data Types
 //------------------------------------------------------------------------------
 
-typedef struct _ESL_SERVICE ESL_SERVICE;  ///<  Forward delcaration
+typedef struct _ESL_SERVICE ESL_SERVICE;  ///<  Forward declaration
 
 /**
   Protocol binding and installation control structure
@@ -652,7 +652,7 @@ EslSocketPoll (
   
   @param [in] Flags           Message control flags
   
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
   
   @param [in] pBuffer         Address of a buffer to receive the data.
   
@@ -720,7 +720,7 @@ EslSocketShutdown (
   
   @param [in] Flags           Message control flags
   
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
   
   @param [in] pBuffer         Address of a buffer containing the data to send
   

@@ -27,7 +27,7 @@
   Attempt to connect to a remote TCP port
 
   This routine starts the connection processing for a SOCK_STREAM
-  or SOCK_SEQPAKCET socket using the TCPv6 network layer.  It
+  or SOCK_SEQPACKET socket using the TCPv6 network layer.  It
   configures the local TCPv6 connection point and then attempts to
   connect to a remote system.  Upon completion, the
   ::EslTcp6ConnectComplete routine gets called with the connection
@@ -467,7 +467,7 @@ EslTcp6ConnectPoll (
   Attempt to connect to a remote TCP port
 
   This routine starts the connection processing for a SOCK_STREAM
-  or SOCK_SEQPAKCET socket using the TCPv6 network layer.  It
+  or SOCK_SEQPACKET socket using the TCPv6 network layer.  It
   configures the local TCPv6 connection point and then attempts to
   connect to a remote system.  Upon completion, the
   ::EslTcp6ConnectComplete routine gets called with the connection
@@ -1551,7 +1551,7 @@ EslTcp6PortCloseOp (
 
   @param [in] pbConsumePacket Address of a BOOLEAN indicating if the packet is to be consumed
 
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
 
   @param [in] pBuffer         Address of a buffer to receive the data.
 
@@ -1689,7 +1689,7 @@ EslTcp6Receive (
   This routine returns the address of the remote connection point
   associated with the SOCK_STREAM or SOCK_SEQPACKET socket.
 
-  This routine is called by ::EslSocketGetPeerAddress to detemine
+  This routine is called by ::EslSocketGetPeerAddress to determine
   the TCPv6 address and por number associated with the network adapter.
 
   @param [in] pPort       Address of an ::ESL_PORT structure.
@@ -1952,7 +1952,7 @@ EslTcp6RxStart (
 
   @param [in] Flags           Message control flags
 
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
 
   @param [in] pBuffer         Address of a buffer to receive the data.
 
@@ -2037,7 +2037,7 @@ EslTcp6TxBuffer (
       if ( pSocket->MaxTxBuf > *pTxBytes ) {
         if ( pPort->bTxFlowControl ) {
           DEBUG (( DEBUG_TX,
-                    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\r\n0x%08x: pPort, TX flow control released, Max bytes: %d > %d bufferred bytes\r\n",
+                    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\r\n0x%08x: pPort, TX flow control released, Max bytes: %d > %d buffered bytes\r\n",
                     pPort,
                     pSocket->MaxTxBuf,
                     *pTxBytes ));
@@ -2153,7 +2153,7 @@ EslTcp6TxBuffer (
       else {
         if ( !pPort->bTxFlowControl ) {
           DEBUG (( DEBUG_TX,
-                    "0x%08x: pPort, TX flow control applied, Max bytes %d <= %d bufferred bytes\r\nTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\r\n",
+                    "0x%08x: pPort, TX flow control applied, Max bytes %d <= %d buffered bytes\r\nTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\r\n",
                     pPort,
                     pSocket->MaxTxBuf,
                     *pTxBytes ));

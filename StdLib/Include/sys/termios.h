@@ -253,7 +253,7 @@ speed_t cfgetospeed (const struct termios *);
     @param[in]    NewSpeed  The new input baud rate.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EINVAL - The value of NewSpeed is outside the range of
                       possible speed values as specified in <sys/termios.h>.
 **/
@@ -269,7 +269,7 @@ int     cfsetispeed (struct termios *, speed_t);
     @param[in]    NewSpeed  The new output baud rate.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EINVAL - The value of NewSpeed is outside the range of
                       possible speed values as specified in <sys/termios.h>.
 **/
@@ -285,7 +285,7 @@ int     cfsetospeed (struct termios *, speed_t);
                             attributes of the interactive IO device.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EBADF - The fd argument is not a valid file descriptor.
                     * ENOTTY - The file associated with fd is not an interactive IO device.
 **/
@@ -311,7 +311,7 @@ int     tcgetattr   (int fd, struct termios *pTermios);
                           attributes to set in the interactive IO device.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EBADF - The fd argument is not a valid file descriptor.
                     * ENOTTY - The file associated with fd is not an interactive IO device.
 **/
@@ -323,7 +323,7 @@ int     tcsetattr   (int fd, int OptAct, const struct termios *pTermios);
     @param[in]  fd        The file descriptor for an open interactive IO device.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EBADF - The fd argument is not a valid file descriptor.
                     * ENOTTY - The file associated with fd is not an interactive IO device.
                     * EINTR - A signal interrupted tcdrain().
@@ -348,7 +348,7 @@ int     tcdrain     (int fd);
                                       terminal device to start transmitting data.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EBADF - The fd argument is not a valid file descriptor.
                     * ENOTTY - The file associated with fd is not an interactive IO device.
                     * EINVAL - The Action argument is not a supported value.
@@ -370,7 +370,7 @@ int     tcflow      (int fd, int Action);
                                     Otherwise error EINVAL.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EBADF - The fd argument is not a valid file descriptor.
                     * ENOTTY - The file associated with fd is not an interactive IO device.
                     * EINVAL - The QueueSelector argument is not a supported value.

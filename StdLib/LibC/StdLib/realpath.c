@@ -28,7 +28,7 @@
   @param[in] file_name            The filename to convert.
   @param[in,out] resolved_name    The resultant name.
 
-  @retval NULL                    An error occured.
+  @retval NULL                    An error occurred.
   @return resolved_name.
 **/
 char *

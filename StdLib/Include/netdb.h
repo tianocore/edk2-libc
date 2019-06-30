@@ -127,7 +127,7 @@ struct  hostent {
   int     h_length;     /**< length of address */
   char  **h_addr_list;  /**< list of addresses from name server */
 };
-#define h_addr  h_addr_list[0]  /**< address, for backward compatiblity */
+#define h_addr  h_addr_list[0]  /**< address, for backward compatibility */
 
 /** Assumption here is that a network number
  *  fits in an unsigned long -- probably a poor one.

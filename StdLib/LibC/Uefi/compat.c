@@ -633,7 +633,7 @@ fmtint(char *buffer, size_t *currlen, size_t maxlen,
     spadlen = 0;
   }
   if (flags & DP_F_MINUS)
-    spadlen = -spadlen; /* Left Justifty */
+    spadlen = -spadlen; /* Left Justify */
 
   /* Spaces */
   while (spadlen > 0) {
@@ -765,7 +765,7 @@ fmtfp(char *buffer, size_t *currlen, size_t maxlen, long double fvalue,
   if (padlen < 0)
     padlen = 0;
   if (flags & DP_F_MINUS)
-    padlen = -padlen; /* Left Justifty */
+    padlen = -padlen; /* Left Justify */
 
   if ((flags & DP_F_ZERO) && (padlen > 0)) {
     if (signvalue) {
