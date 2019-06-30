@@ -349,7 +349,7 @@ typedef struct {
   Configure the network layer.
 
   @param [in] pProtocol   Protocol structure address
-  @param [in] pConfigData Address of the confiuration data
+  @param [in] pConfigData Address of the configuration data
 
   @return   Returns EFI_SUCCESS if the operation is successfully
             started.
@@ -513,7 +513,7 @@ EFI_STATUS
   Attempt to connect to a remote TCP port
 
   This routine starts the connection processing for a SOCK_STREAM
-  or SOCK_SEQPAKCET socket using the TCP network layer.
+  or SOCK_SEQPACKET socket using the TCP network layer.
 
   This routine is called by ::EslSocketConnect to initiate the TCP
   network specific connect operations.
@@ -776,7 +776,7 @@ EFI_STATUS
   
   @param [in] pbConsumePacket Address of a BOOLEAN indicating if the packet is to be consumed
   
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
   
   @param [in] pBuffer         Address of a buffer to receive the data.
   
@@ -868,7 +868,7 @@ VOID
 
   @param [in] Flags           Message control flags
 
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
 
   @param [in] pBuffer         Address of a buffer to receive the data.
 
@@ -996,7 +996,7 @@ typedef struct _ESL_SOCKET {
   //
   ESL_SOCKET * pNext;           ///<  Next socket in the list of sockets
   int errno;                    ///<  Error information for this socket
-  EFI_STATUS Status;            ///<  Asyncronous error information for this socket
+  EFI_STATUS Status;            ///<  Asynchronous error information for this socket
   SOCKET_STATE State;           ///<  Socket state
   UINT32 DebugFlags;            ///<  Debug flags
 
@@ -1183,7 +1183,7 @@ EslSocketBindTest (
 
   @param [in] pFragmentTable  Address of an EFI_IP4_FRAGMENT_DATA structure
 
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
 
   @param [in] pBuffer         Address of a buffer to receive the data.
 

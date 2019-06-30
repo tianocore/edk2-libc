@@ -52,7 +52,7 @@ getsockopt (
                                              option_len,
                                              &errno );
   }
-  //  Return the operation stauts
+  //  Return the operation status
   OptionStatus = ( 0 == errno ) ? 0 : -1;
   return OptionStatus;
 }

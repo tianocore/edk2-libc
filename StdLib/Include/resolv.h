@@ -91,7 +91,7 @@
 #define	RES_MAXNDOTS		15	/* should reflect bit field size */
 
 struct __res_state {
-	int	retrans;	 	/* retransmition time interval */
+	int	retrans;	 	/* retransmission time interval */
 	int	retry;			/* number of times to retransmit */
 	u_long	options;		/* option flags - see below. */
 	int	nscount;		/* number of name servers */

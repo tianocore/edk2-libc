@@ -112,7 +112,7 @@
 !ifdef $(EMULATE)
   # The Build Options, below, are only used when building the Standard Libraries
   # to be run under an emulation environment; such as NT32Pkg.
-  # They disable optimization which facillitates debugging under the Emulation environment.
+  # They disable optimization which facilitates debugging under the Emulation environment.
   INTEL:*_*_IA32_CC_FLAGS   = /Od /D UEFI_C_SOURCE
    MSFT:*_*_IA32_CC_FLAGS   = /Od /D UEFI_C_SOURCE
     GCC:*_*_IA32_CC_FLAGS   = -O0 -DUEFI_C_SOURCE

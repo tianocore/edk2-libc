@@ -103,7 +103,7 @@ typedef __builtin_va_list   va_list;
 /*@}*/
 
 /** @{
-    The va_end macro facillitates a normal return from the function whose
+    The va_end macro facilitates a normal return from the function whose
     variable argument list was referred to by the expansion of va_start that
     initialized the va_list ap.
 

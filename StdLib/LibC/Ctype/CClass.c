@@ -241,7 +241,7 @@ isblank(
 
   @param[in]  c   The character to test.
 
-  @return     Returns nonzero (true) if c is a valid ASCII character.  Otherwize,
+  @return     Returns nonzero (true) if c is a valid ASCII character.  Otherwise,
               zero (false) is returned.
 **/
 int

@@ -68,7 +68,7 @@ cfgetospeed (
     @param[in]    NewSpeed  The new input baud rate.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EINVAL - The value of NewSpeed is outside the range of
                       possible speed values as specified in <sys/termios.h>.
 **/
@@ -101,7 +101,7 @@ cfsetispeed (
     @param[in]    NewSpeed  The new output baud rate.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EINVAL - The value of NewSpeed is outside the range of
                       possible speed values as specified in <sys/termios.h>.
 **/
@@ -134,7 +134,7 @@ cfsetospeed (
                             attributes of the interactive IO device.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EBADF - The fd argument is not a valid file descriptor.
                     * ENOTTY - The file associated with fd is not an interactive IO device.
 **/
@@ -191,7 +191,7 @@ tcgetattr (
                           attributes to set in the interactive IO device.
 
     @retval 0     The operation completed successfully.
-    @retval -1    An error occured and errno is set to indicate the error.
+    @retval -1    An error occurred and errno is set to indicate the error.
                     * EBADF - The fd argument is not a valid file descriptor.
                     * ENOTTY - The file associated with fd is not an interactive IO device.
 **/

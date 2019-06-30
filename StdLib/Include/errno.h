@@ -18,7 +18,7 @@
   of errno is not documented in the description of the function in
   the governing standard: ISO/IEC 9899:1990 with Amendment 1 or ISO/IEC 9899:199409.
 
-  EFIerrno, like errno, should only be checked if it is known that the preceeding function call
+  EFIerrno, like errno, should only be checked if it is known that the preceding function call
   called a UEFI function.  Functions in which UEFI functions are called dependent upon context
   or parameter values should guarantee that EFIerrno is set to zero by default, or to the status
   value returned by any UEFI functions which are called.

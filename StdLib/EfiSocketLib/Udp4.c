@@ -288,7 +288,7 @@ EslUdp4PortAllocate (
   
   @param [in] pbConsumePacket Address of a BOOLEAN indicating if the packet is to be consumed
   
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
   
   @param [in] pBuffer         Address of a buffer to receive the data.
   
@@ -383,7 +383,7 @@ EslUdp4Receive (
   This routine returns the address of the remote connection point
   associated with the SOCK_DGRAM socket.
 
-  This routine is called by ::EslSocketGetPeerAddress to detemine
+  This routine is called by ::EslSocketGetPeerAddress to determine
   the UDPv4 address and port number associated with the network adapter.
 
   @param [in] pPort       Address of an ::ESL_PORT structure.
@@ -740,7 +740,7 @@ EslUdp4RxComplete (
 
   @param [in] Flags           Message control flags
 
-  @param [in] BufferLength    Length of the the buffer
+  @param [in] BufferLength    Length of the buffer
 
   @param [in] pBuffer         Address of a buffer to receive the data.
 

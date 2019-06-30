@@ -59,7 +59,7 @@ bind (
                                         &errno );
   }
 
-  //  Return the operation stauts
+  //  Return the operation status
   BindStatus = ( 0 == errno ) ? 0 : -1;
   return BindStatus;
 }

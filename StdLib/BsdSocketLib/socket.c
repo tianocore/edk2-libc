@@ -190,7 +190,7 @@ BslSocketProtocolToFd (
                           </li>
                           <li>
                             SOCK_STREAM - Connect to TCP, provides a byte stream
-                            that is manipluated by read, recv, send and write.
+                            that is manipulated by read, recv, send and write.
                           </li>
                           <li>
                             SOCK_RAW - Connect to IP, provides a datagram service that

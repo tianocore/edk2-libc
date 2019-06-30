@@ -7,7 +7,7 @@
   characters.  It this the responsibility of the caller to convert between
   narrow and wide characters in order to perform the desired operations.
 
-  The devices status as a wide device is indicatd by _S_IWTTY being set in
+  The devices status as a wide device is indicated by _S_IWTTY being set in
   f_iflags.
 
   Copyright (c) 2016, Daryl McDaniel. All rights reserved.<BR>

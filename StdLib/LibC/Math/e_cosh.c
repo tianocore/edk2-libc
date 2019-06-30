@@ -77,7 +77,7 @@ __ieee754_cosh(double x)
     /* |x| in [22, log(maxdouble)] return half*exp(|x|) */
   if (ix < 0x40862E42)  return half*__ieee754_exp(fabs(x));
 
-    /* |x| in [log(maxdouble), overflowthresold] */
+    /* |x| in [log(maxdouble), overflowthreshold] */
   GET_LOW_WORD(lx,x);
   if (ix<0x408633CE ||
         ((ix==0x408633ce)&&(lx<=(u_int32_t)0x8fb9f87d))) {
@@ -86,6 +86,6 @@ __ieee754_cosh(double x)
       return t*w;
   }
 
-    /* |x| > overflowthresold, cosh(x) overflow */
+    /* |x| > overflowthreshold, cosh(x) overflow */
   return huge*huge;
 }

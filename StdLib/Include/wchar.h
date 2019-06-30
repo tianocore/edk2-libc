@@ -777,7 +777,7 @@ int vfwscanf(FILE * __restrict Stream, const wchar_t * __restrict Format, va_lis
 
     @return   The vswprintf function returns the number of wide characters
               written in the array, not counting the terminating null wide
-              character, or a neg ative value if an encoding error occurred or
+              character, or a negative value if an encoding error occurred or
               if n or more wide characters were requested to be generated.
 **/
 int vswprintf(wchar_t * __restrict S, size_t N, const wchar_t * __restrict Format, va_list Args);

@@ -282,7 +282,7 @@ EntryPoint (
       EslServiceLoad ( ImageHandle );
 
       //
-      //  Make the socket serivces available to other drivers
+      //  Make the socket services available to other drivers
       //  and applications
       //
       Status = EslDxeInstall ( &ImageHandle );
@@ -328,7 +328,7 @@ EntryPoint (
 
 
 /**
-  Socket layer's service binding protocol delcaration.
+  Socket layer's service binding protocol declaration.
 **/
 CONST EFI_SERVICE_BINDING_PROTOCOL mEfiServiceBinding = {
   EslDxeCreateChild,

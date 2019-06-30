@@ -1,5 +1,5 @@
 /** @file
-  Compute the logrithm of x.
+  Compute the logarithm of x.
 
   Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials are licensed and made available under
@@ -31,7 +31,7 @@
 #endif
 
 /* __ieee754_log(x)
- * Return the logrithm of x
+ * Return the logarithm of x
  *
  * Method :
  *   1. Argument Reduction: find k and f such that

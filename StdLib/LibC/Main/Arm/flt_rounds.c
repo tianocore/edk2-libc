@@ -52,7 +52,7 @@ static const int map[] = {
  * Returns:
  *  0 - round to zero
  *  1 - round to nearest
- *  2 - round to postive infinity
+ *  2 - round to positive infinity
  *  3 - round to negative infinity
  *
  * ok all we need to do is get the current FP rounding mode
