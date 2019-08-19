@@ -39,7 +39,7 @@
 #define _INTTYPES_H_
 
 #include  <sys/EfiCdefs.h>
-//#include  <sys/inttypes.h>
+#include  <sys/inttypes.h>
 #include  <sys/stdint.h>
 #include  <machine/ansi.h>
 
