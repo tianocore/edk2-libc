@@ -82,6 +82,12 @@ typedef __sa_family_t sa_family_t;
 #ifndef socklen_t
 typedef __socklen_t socklen_t;
 #define socklen_t __socklen_t
+/*add some defines that some applications may look for to check for socklen_t type*/
+#define _SOCKLEN_T_DEFINED_
+#define _SOCKLEN_T_DECLARED
+#define __socklen_t_defined
+#define _SOCKLEN_T
+#define __DEFINED_socklen_t
 #endif
 
 #include <machine/ansi.h>
