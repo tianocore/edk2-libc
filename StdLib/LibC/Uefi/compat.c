@@ -97,45 +97,7 @@
 #include  <sys/syslimits.h>
 
 #ifndef HAVE_GETOPT
-char *optarg;
-int optind = 1;
-int
-getopt(int argc, char **argv, char *args)
-{
-        size_t n;
-  size_t nlen = strlen(args);
-        char cmd;
-        char rv;
-
-        if (argv[optind] && *argv[optind] == '-') {
-                cmd = *(argv[optind] + 1);
-
-                for (n = 0; n < nlen; n++) {
-                        if (args[n] == ':')
-        continue;
-                        if (args[n] == cmd) {
-                                rv = *(argv[optind] + 1);
-                                if (args[n+1] == ':') {
-          if (*(argv[optind] + 2) != '\0') {
-                                          optarg = argv[optind] + 2;
-            optind += 1;
-          } else {
-                                          optarg = argv[optind + 1];
-                                          optind += 2;
-          }
-                                        if (!optarg)
-             optarg="";
-                                        return rv;
-                                } else {
-                                        optarg = NULL;
-                                        optind += 1;
-                                        return rv;
-                                }
-                        }
-                }
-        }
-        return -1;
-}
+#include  <getopt.h> //functionality for getopt and getopt_long provided in getopt_long.c
 #endif
 
 #define ISPATHSEPARATOR(x) ((x == '/') || (x == '\\'))
