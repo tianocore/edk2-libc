@@ -110,7 +110,8 @@ NormalizePath( const char *path)
   wchar_t  *NewPath;
   size_t    Length;
 
-  OldPath = AsciiStrToUnicodeStr(path, gMD->UString);
+  AsciiStrToUnicodeStrS (path, gMD->UString, UNICODE_STRING_MAX);
+  OldPath = gMD->UString;
   Length  = wcslen(OldPath) + 1;
 
   NewPath = calloc(Length, sizeof(wchar_t));

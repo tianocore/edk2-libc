@@ -151,7 +151,7 @@ system(const char *string)
   if( string == NULL) {
     return 1;
   }
-  (void)AsciiStrToUnicodeStr( string, gMD->UString);
+  (void)AsciiStrToUnicodeStrS (string, gMD->UString, UNICODE_STRING_MAX);
   OpStat = ShellExecute( &MyHandle, gMD->UString, FALSE, NULL, &CmdStat);
   if(OpStat == RETURN_SUCCESS) {
     EFIerrno = CmdStat;
@@ -177,10 +177,11 @@ char   *getenv(const char *name)
   const CHAR16  *EfiEnv;
   char          *retval = NULL;
 
-  (void)AsciiStrToUnicodeStr( name, gMD->UString);
+  (void)AsciiStrToUnicodeStrS (name, gMD->UString, UNICODE_STRING_MAX);
   EfiEnv = ShellGetEnvironmentVariable(gMD->UString);
   if(EfiEnv != NULL) {
-    retval = UnicodeStrToAsciiStr( EfiEnv, gMD->ASgetenv);
+    (void)UnicodeStrToAsciiStrS (EfiEnv, gMD->ASgetenv, UNICODE_STRING_MAX);
+    retval = gMD->ASgetenv;
   }
 
   return retval;
@@ -238,8 +239,8 @@ setenv (
     //
     //  Convert the strings
     //
-    AsciiStrToUnicodeStr ( name, UName );
-    AsciiStrToUnicodeStr ( value, UValue );
+    AsciiStrToUnicodeStrS (name, UName, UNICODE_STRING_MAX);
+    AsciiStrToUnicodeStrS (value, UValue, UNICODE_STRING_MAX);
 
     //
     //  Determine if the string is already present

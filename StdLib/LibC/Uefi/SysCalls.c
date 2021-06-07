@@ -1320,7 +1320,8 @@ char
     errno = ERANGE;
     return (NULL);
   }
-  return (UnicodeStrToAsciiStr(Cwd, buf));
+  UnicodeStrToAsciiStrS (Cwd, buf, UNICODE_STRING_MAX);
+  return buf;
 }
 
 /** Change the current working directory.
@@ -1358,7 +1359,7 @@ chdir (const char *path)
         errno = ENOMEM;
         return -1;
       }
-      AsciiStrToUnicodeStr(path, UnicodePath);
+      AsciiStrToUnicodeStrS (path, UnicodePath, UNICODE_STRING_MAX);
       Status = gEfiShellProtocol->SetCurDir(NULL, UnicodePath);
       FreePool(UnicodePath);
       if (EFI_ERROR(Status)) {

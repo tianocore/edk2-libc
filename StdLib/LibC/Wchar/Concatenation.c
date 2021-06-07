@@ -31,7 +31,8 @@
 **/
 wchar_t *wcscat(wchar_t * __restrict s1, const wchar_t * __restrict s2)
 {
-  return (wchar_t *)StrCat( (CHAR16 *)s1, (CONST CHAR16 *)s2);
+  StrCatS ((CHAR16 *)s1, UNICODE_STRING_MAX, (CONST CHAR16 *)s2);
+  return s1;
 }
 
 /** The wcsncat function appends not more than n wide characters (a null wide
@@ -44,5 +45,6 @@ wchar_t *wcscat(wchar_t * __restrict s1, const wchar_t * __restrict s2)
 **/
 wchar_t *wcsncat(wchar_t * __restrict s1, const wchar_t * __restrict s2, size_t n)
 {
-  return (wchar_t *)StrnCat( (CHAR16 *)s1, (CONST CHAR16 *)s2, (UINTN)n);
+  StrnCatS ((CHAR16 *)s1, UNICODE_STRING_MAX, (CONST CHAR16 *)s2, (UINTN)n);
+  return s1;
 }

@@ -15,6 +15,7 @@
 
 #include  <LibConfig.h>
 
+#include <limits.h>
 #include  <string.h>
 
 /** The strcat function appends a copy of the string pointed to by s2
@@ -28,7 +29,8 @@
 char *
 strcat(char * __restrict s1, const char * __restrict s2)
 {
-  return AsciiStrCat( s1, s2);
+  AsciiStrCatS (s1, UNICODE_STRING_MAX, s2);
+  return s1;
 }
 
 /** The strncat function appends not more than n characters (a null character
@@ -43,7 +45,8 @@ strcat(char * __restrict s1, const char * __restrict s2)
 char *
 strncat(char * __restrict s1, const char * __restrict s2, size_t n)
 {
-  return AsciiStrnCat( s1, s2, n);
+  AsciiStrnCatS (s1, UNICODE_STRING_MAX, s2, n);
+  return s1;
 }
 
 /** The strncatX function appends not more than n characters (a null character

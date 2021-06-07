@@ -14,6 +14,7 @@
 #include <Library/BaseLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <errno.h>
+#include <limits.h>
 
 /** The realpath() function shall derive, from the pathname pointed to by
     file_name, an absolute pathname that names the same file, whose resolution
@@ -47,8 +48,8 @@ realpath(
     errno = ENOMEM;
     return (NULL);
   }
-  AsciiStrToUnicodeStr(file_name, Temp);
+  AsciiStrToUnicodeStrS (file_name, Temp, UNICODE_STRING_MAX);
   PathCleanUpDirectories(Temp);
-  UnicodeStrToAsciiStr(Temp, resolved_name);
+  UnicodeStrToAsciiStrS (Temp, resolved_name, UNICODE_STRING_MAX);
   return (resolved_name);
 }
