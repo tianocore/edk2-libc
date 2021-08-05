@@ -53,7 +53,7 @@
 #define MAX_OUTPUT        255   ///< Maximum bytes in terminal output.
 #define NAME_MAX          255   ///< Maximum bytes in a file name.
 #ifndef OPEN_MAX
-  #define OPEN_MAX         20   ///< Maximum open files per process.
+  #define OPEN_MAX         255   ///< Maximum open files per process.
 #endif
 #define PATH_MAX         1024   ///< Maximum bytes in pathname.
 #define PIPE_BUF          512   ///< Maximum bytes for atomic pipe writes.
