@@ -15,6 +15,7 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiLib.h>
 #include <Library/PcdLib.h>
+#include <limits.h>
 
 static CHAR8   *ReturnStringAscii = NULL;
 
@@ -37,7 +38,7 @@ char *getpass(const char *Prompt)
     return (NULL);
   }
 
-  UnicodeStrToAsciiStr(ReturnString, ReturnStringAscii);
+  UnicodeStrToAsciiStrS(ReturnString, ReturnStringAscii, UNICODE_STRING_MAX);
 
   FreePool(ReturnString);
 
