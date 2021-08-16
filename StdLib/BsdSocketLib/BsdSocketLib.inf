@@ -106,6 +106,7 @@
   BaseMemoryLib
   DebugLib
   DevUtility
+  LibNetUtil
   UefiBootServicesTableLib
   UefiLib
 
