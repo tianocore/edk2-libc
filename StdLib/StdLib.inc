@@ -99,7 +99,11 @@
 ##########
 #  Socket Layer
 ##########
-  StdLib/SocketDxe/SocketDxe.inf
+#
+# Disable SocketDxe.inf due to conflict between use of weak symbols
+# and /WHOLEARCHIVE linker option.
+#
+#  StdLib/SocketDxe/SocketDxe.inf
 
 
 ##############################################################################
