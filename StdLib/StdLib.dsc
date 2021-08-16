@@ -32,6 +32,8 @@
   DEFINE DEBUG_PRINT_ERROR_LEVEL  = 0x80000000  # Flags to control amount of debug output
   DEFINE DEBUG_PROPERTY_MASK      = 0x0f
 
+!include MdePkg/MdeLibs.dsc.inc
+
 [PcdsFeatureFlag]
 
 [PcdsFixedAtBuild]
