@@ -52,7 +52,6 @@
 
   # Private interfaces interfacing to libc
   dtoa.c
-  ldtoa.c
   gdtoa.c
 
   # private interfaces
