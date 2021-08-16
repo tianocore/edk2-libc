@@ -138,7 +138,7 @@
 #undef HAVE_CONIO_H
 
 /* Define to 1 if you have the 'copysign' function. */
-#undef HAVE_COPYSIGN
+#define HAVE_COPYSIGN         1
 
 /* Define to 1 if you have the 'ctermid' function. */
 #undef HAVE_CTERMID
