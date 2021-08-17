@@ -60,10 +60,10 @@ EDK II Packages:
 ----------------
 AppPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/AppPkg
-M: Daryl McDaniel <edk2-lists@mc2research.org>
-M: Jaben Carsey <jaben.carsey@intel.com>
+M: Rebecca Cran <rebecca@nuviainc.com>
+M: Michael D Kinney <michael.d.kinney@intel.com>
 
 StdLib, StdLibPrivateInternalFiles
 W: https://github.com/tianocore/tianocore.github.io/wiki/StdLib
-M: Daryl McDaniel <edk2-lists@mc2research.org>
-M: Jaben Carsey <jaben.carsey@intel.com>
+M: Rebecca Cran <rebecca@nuviainc.com>
+M: Michael D Kinney <michael.d.kinney@intel.com>
