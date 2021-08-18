@@ -56,7 +56,7 @@ main (
         break;
 
       case ENODEV:
-        Print ( L"WARNING - Plarform does not support permanent storage!\r\n" );
+        Print ( L"WARNING - Platform does not support permanent storage!\r\n" );
         break;
 
       case ENOMEM:
