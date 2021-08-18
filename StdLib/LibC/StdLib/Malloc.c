@@ -94,6 +94,12 @@ malloc(size_t Size)
     return NULL;
   }
 
+  if ((Size + sizeof(CPOOL_HEAD)) < Size) {
+    RetVal  = NULL;
+    errno   = ENOMEM;
+    DEBUG((DEBUG_ERROR, "\nERROR malloc: Size overflow\n"));
+  }
+
   NodeSize = (UINTN)(Size + sizeof(CPOOL_HEAD));
 
   DEBUG((DEBUG_POOL, "malloc(%d): NodeSz: %d", Size, NodeSize));
