@@ -359,6 +359,7 @@ reclassify:
     }
     else if(MPath != NULL) {
       free(MPath);    /* Caller doesn't want it so let MPath go free */
+      MPath = NULL;
     }
 
     /*  At this point, WPath is an absolute path,
