@@ -86,12 +86,7 @@
 #endif
 
 #include  <sys/featuretest.h>
-//#include <machine/_EfiCdefs.h>
-#ifdef __PE32__
-#include <sys/_EfiCdefs_PE32.h>
-#else
-#include <sys/cdefs_aout.h>
-#endif
+#define __warn_references(sym,msg)
 
 /* NULL is defined by the automatic inclusion of Base.h by the build tools. */
 
