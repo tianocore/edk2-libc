@@ -38,7 +38,9 @@ realpath(
   char *resolved_name
   )
 {
-  CHAR16 *Temp;
+  RETURN_STATUS  Status;
+  CHAR16         *Temp;
+
   if (file_name == NULL || resolved_name == NULL) {
     errno = EINVAL;
     return (NULL);
@@ -48,8 +50,19 @@ realpath(
     errno = ENOMEM;
     return (NULL);
   }
-  AsciiStrToUnicodeStrS (file_name, Temp, UNICODE_STRING_MAX);
+  Status = AsciiStrToUnicodeStrS (file_name, Temp, AsciiStrLen (file_name) + 1);
+  if (RETURN_ERROR (Status)) {
+    errno = EINVAL;
+    return NULL;
+  }
+
   PathCleanUpDirectories(Temp);
-  UnicodeStrToAsciiStrS (Temp, resolved_name, UNICODE_STRING_MAX);
+
+  Status = UnicodeStrToAsciiStrS (Temp, resolved_name, AsciiStrLen (file_name) + 1);
+  if (RETURN_ERROR (Status)) {
+    errno = EINVAL;
+    return NULL;
+  }
+
   return (resolved_name);
 }

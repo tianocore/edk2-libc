@@ -180,7 +180,7 @@ char   *getenv(const char *name)
   (void)AsciiStrToUnicodeStrS (name, gMD->UString, UNICODE_STRING_MAX);
   EfiEnv = ShellGetEnvironmentVariable(gMD->UString);
   if(EfiEnv != NULL) {
-    (void)UnicodeStrToAsciiStrS (EfiEnv, gMD->ASgetenv, UNICODE_STRING_MAX);
+    (void)UnicodeStrToAsciiStrS (EfiEnv, gMD->ASgetenv, ASCII_STRING_MAX);
     retval = gMD->ASgetenv;
   }
 

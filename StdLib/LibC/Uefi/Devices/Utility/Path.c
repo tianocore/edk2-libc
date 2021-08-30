@@ -105,12 +105,17 @@ ClassifyPath(
 wchar_t *
 NormalizePath( const char *path)
 {
-  wchar_t  *temp;
-  wchar_t  *OldPath;
-  wchar_t  *NewPath;
-  size_t    Length;
+  RETURN_STATUS  Status;
+  wchar_t        *temp;
+  wchar_t        *OldPath;
+  wchar_t        *NewPath;
+  size_t         Length;
 
-  AsciiStrToUnicodeStrS (path, gMD->UString, UNICODE_STRING_MAX);
+  Status = AsciiStrToUnicodeStrS (path, gMD->UString, UNICODE_STRING_MAX);
+  if (RETURN_ERROR (Status)) {
+    errno    = EINVAL;
+    EFIerrno = Status;
+  }
   OldPath = gMD->UString;
   Length  = wcslen(OldPath) + 1;
 

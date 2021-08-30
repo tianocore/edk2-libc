@@ -16,7 +16,6 @@
 
 #include  <LibConfig.h>
 
-#include <limits.h>
 #include  <stdlib.h>
 #include  <string.h>
 
@@ -74,7 +73,7 @@ strcpy(char * __restrict s1, const char * __restrict s2)
 
   //while ( *s1++ = *s2++)  /* Empty Body */;
   //return(s1ret);
-  AsciiStrCpyS (s1, UNICODE_STRING_MAX, s2);
+  AsciiStrCpyS (s1, AsciiStrLen (s2) + 1, s2);
   return s1;
 }
 
@@ -91,7 +90,7 @@ strcpy(char * __restrict s1, const char * __restrict s2)
 **/
 char     *strncpy(char * __restrict s1, const char * __restrict s2, size_t n)
 {
-  AsciiStrnCpyS (s1, UNICODE_STRING_MAX, s2, n);
+  AsciiStrnCpyS (s1, n, s2, n);
   return s1;
   //char *dest = s1;
 

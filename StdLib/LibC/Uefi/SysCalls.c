@@ -1304,7 +1304,8 @@ write  (int fd, const void *buf, size_t nbyte)
 char
 *getcwd (char *buf, size_t size)
 {
-  CONST CHAR16 *Cwd;
+  RETURN_STATUS  Status;
+  CONST CHAR16   *Cwd;
 
   if (size == 0 || buf == NULL) {
     errno = EINVAL;
@@ -1320,7 +1321,10 @@ char
     errno = ERANGE;
     return (NULL);
   }
-  UnicodeStrToAsciiStrS (Cwd, buf, UNICODE_STRING_MAX);
+  Status = UnicodeStrToAsciiStrS (Cwd, buf, size);
+  if (RETURN_ERROR (Status)) {
+    return NULL;
+  }
   return buf;
 }
 

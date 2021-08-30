@@ -29,7 +29,7 @@
 **/
 wchar_t *wcscpy(wchar_t * __restrict s1, const wchar_t * __restrict s2)
 {
-  return (wchar_t *)StrCpyS ((CHAR16 *)s1, UNICODE_STRING_MAX, (CONST CHAR16 *)s2);
+  return (wchar_t *)StrCpyS ((CHAR16 *)s1, StrLen (s2) + 1, (CONST CHAR16 *)s2);
 }
 
 /** The wcsncpy function copies not more than n wide characters (those that
@@ -44,7 +44,7 @@ wchar_t *wcscpy(wchar_t * __restrict s1, const wchar_t * __restrict s2)
 **/
 wchar_t *wcsncpy(wchar_t * __restrict s1, const wchar_t * __restrict s2, size_t n)
 {
-  return (wchar_t *)StrnCpyS ((CHAR16 *)s1, UNICODE_STRING_MAX, (CONST CHAR16 *)s2, (UINTN)n);
+  return (wchar_t *)StrnCpyS ((CHAR16 *)s1, (UINTN)n, (CONST CHAR16 *)s2, (UINTN)n);
 }
 
 /** The wmemcpy function copies n wide characters from the object pointed to by

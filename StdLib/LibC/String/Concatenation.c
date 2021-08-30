@@ -29,7 +29,7 @@
 char *
 strcat(char * __restrict s1, const char * __restrict s2)
 {
-  AsciiStrCatS (s1, UNICODE_STRING_MAX, s2);
+  AsciiStrCatS (s1, AsciiStrLen (s1) + AsciiStrLen(s2) + 1, s2);
   return s1;
 }
 
@@ -45,7 +45,7 @@ strcat(char * __restrict s1, const char * __restrict s2)
 char *
 strncat(char * __restrict s1, const char * __restrict s2, size_t n)
 {
-  AsciiStrnCatS (s1, UNICODE_STRING_MAX, s2, n);
+  AsciiStrnCatS (s1, AsciiStrLen (s1) + 1 + (UINTN)n, s2, n);
   return s1;
 }
 

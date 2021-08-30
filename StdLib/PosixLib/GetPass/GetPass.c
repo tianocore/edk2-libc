@@ -15,14 +15,14 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiLib.h>
 #include <Library/PcdLib.h>
-#include <limits.h>
 
 static CHAR8   *ReturnStringAscii = NULL;
 
 char *getpass(const char *Prompt)
 {
-  BOOLEAN Ascii;
-  CHAR16  *ReturnString;
+  RETURN_STATUS  Status;
+  BOOLEAN        Ascii;
+  CHAR16         *ReturnString;
 
   Ascii = FALSE;
 
@@ -38,7 +38,10 @@ char *getpass(const char *Prompt)
     return (NULL);
   }
 
-  UnicodeStrToAsciiStrS(ReturnString, ReturnStringAscii, UNICODE_STRING_MAX);
+  Status = UnicodeStrToAsciiStrS(ReturnString, ReturnStringAscii, StrLen (ReturnString) + 1);
+  if (RETURN_ERROR (Status)) {
+    ReturnStringAscii = NULL;
+  }
 
   FreePool(ReturnString);
 

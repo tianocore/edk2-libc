@@ -31,7 +31,7 @@
 **/
 wchar_t *wcscat(wchar_t * __restrict s1, const wchar_t * __restrict s2)
 {
-  StrCatS ((CHAR16 *)s1, UNICODE_STRING_MAX, (CONST CHAR16 *)s2);
+  StrCatS ((CHAR16 *)s1, StrLen (s1) + StrLen (s2) + 1, (CONST CHAR16 *)s2);
   return s1;
 }
 
@@ -45,6 +45,6 @@ wchar_t *wcscat(wchar_t * __restrict s1, const wchar_t * __restrict s2)
 **/
 wchar_t *wcsncat(wchar_t * __restrict s1, const wchar_t * __restrict s2, size_t n)
 {
-  StrnCatS ((CHAR16 *)s1, UNICODE_STRING_MAX, (CONST CHAR16 *)s2, (UINTN)n);
+  StrnCatS ((CHAR16 *)s1, StrLen (s1) + 1 + (UINTN)n, (CONST CHAR16 *)s2, (UINTN)n);
   return s1;
 }
