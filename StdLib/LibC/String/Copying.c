@@ -90,7 +90,7 @@ strcpy(char * __restrict s1, const char * __restrict s2)
 **/
 char     *strncpy(char * __restrict s1, const char * __restrict s2, size_t n)
 {
-  AsciiStrnCpyS (s1, n, s2, n);
+  AsciiStrnCpyS (s1, n + 1, s2, n);
   return s1;
   //char *dest = s1;
 
