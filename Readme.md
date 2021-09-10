@@ -24,6 +24,7 @@ contains the following components that are covered by additional licenses:
 * [AppPkg/Applications/Python/Python-2.7.2/Tools/pybench](AppPkg/Applications/Python/Python-2.7.2/Tools/pybench/LICENSE)
 * [AppPkg/Applications/Python/Python-2.7.2](AppPkg/Applications/Python/Python-2.7.2/LICENSE)
 * [AppPkg/Applications/Python/Python-2.7.10](AppPkg/Applications/Python/Python-2.7.10/LICENSE)
+* [AppPkg/Applications/Python/Python-3.6.8](AppPkg/Applications/Python/Python-3.6.8/LICENSE)
 
 The EDK II LIBC Project is composed of packages.  The maintainers for each
 package are listed in [Maintainers.txt](Maintainers.txt).
