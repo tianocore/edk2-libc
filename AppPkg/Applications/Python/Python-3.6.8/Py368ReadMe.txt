@@ -175,6 +175,7 @@ system as follows:
   _symtable             Modules/symtablemodule.c
   _weakref              Modules/_weakref.c
   array                 Modules/arraymodule.c
+  atexit                Modules/atexitmodule.c
   binascii              Modules/binascii.c
   cmath                 Modules/cmathmodule.c
   datetime              Modules/_datetimemodule.c

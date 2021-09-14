@@ -215,6 +215,7 @@
   Modules/_io/iobase.c                 #
   Modules/_io/stringio.c               #
   Modules/_io/textio.c                 #
+  Modules/atexitmodule.c	       #
 
 #Modules/cjkcodecs
   Modules/cjkcodecs/multibytecodec.c   #

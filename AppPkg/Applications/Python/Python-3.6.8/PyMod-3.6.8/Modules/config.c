@@ -65,6 +65,7 @@ extern PyObject* PyInit__weakref(void);
 extern PyObject* init_winreg(void);
 extern PyObject* PyInit_zlib(void);
 extern PyObject* initbz2(void);
+extern PyObject* PyInit_atexit(void);
 
 extern PyObject* PyMarshal_Init(void);
 extern PyObject* _PyWarnings_Init(void);
@@ -111,6 +112,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"gc", PyInit_gc},
 	{"math", PyInit_math},
     {"array", PyInit_array},
+    {"atexit", PyInit_atexit},
     {"_datetime", PyInit__datetime},
     {"parser", PyInit_parser},
     {"pyexpat", PyInit_pyexpat},
