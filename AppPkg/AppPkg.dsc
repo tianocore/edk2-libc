@@ -7,7 +7,7 @@
 #   for important information about configuring this package for your
 #   environment.
 #
-#   Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+#   Copyright (c) 2010 - 2021, Intel Corporation. All rights reserved.<BR>
 #   SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
@@ -119,9 +119,6 @@
       gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x2F
       gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80400040
   }
-
-#### Un-comment the following line to build Python 2.7.2.
-#  AppPkg/Applications/Python/PythonCore.inf
 
 #### Un-comment the following line to build Python 2.7.10.
 # AppPkg/Applications/Python/Python-2.7.10/Python2710.inf
