@@ -22,7 +22,6 @@ The majority of the content in the EDK II open source project uses a
 [BSD-2-Clause Plus Patent License](License.txt).  The EDK II open source project
 contains the following components that are covered by additional licenses:
 
-* [AppPkg/Applications/Python/Python-2.7.10](AppPkg/Applications/Python/Python-2.7.10/LICENSE)
 * [AppPkg/Applications/Python/Python-3.6.8](AppPkg/Applications/Python/Python-3.6.8/LICENSE)
 
 The EDK II LIBC Project is composed of packages.  The maintainers for each
