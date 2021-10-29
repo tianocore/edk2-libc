@@ -1,8 +1,8 @@
                                      EADK
                   EDK II Standard Libraries and Applications
                                     ReadMe
-                                 Version 1.02
-                                 21 Dec. 2012
+                                 Version 1.03
+                                 29 Oct. 2021
 
 
 OVERVIEW
@@ -43,9 +43,9 @@ The EADK is comprised of three packages:
       Main     This application is functionally identical to Hello, except that
                it uses the Standard C Library to provide a main() entry point.
 
-      Python   A port of the Python-2.7.2 interpreter for UEFI.  Building this
+      Python   A port of the Python-3.6.8 interpreter for UEFI.  Building this
                application is disabled by default.
-               See the PythonReadMe.txt file, in the Python directory,
+               See the Py368ReadMe.txt file, in the Python\Python-3.6.8 directory,
                for information on configuring and building Python.
 
       Sockets  A collection of applications demonstrating use of the
