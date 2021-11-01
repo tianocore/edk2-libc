@@ -146,14 +146,12 @@ There are some boiler-plate declarations and definitions that need to be
 included in your application's INF and DSC build files.  These are described
 in the CONFIGURATION section, below.
 
-A subset of the Python 2.7.2 distribution is included as part of AppPkg.  If desired,
-the full Python 2.7.2 distribution may be downloaded from python.org and used instead.
-Delete or rename the existing Python-2.7.2 directory then extract the downloaded
-Python-2.7.2.tgz file into the AppPkg\Applications\Python directory.  This will produce a
-Python-2.7.2 directory containing the full Python distribution.  Python files that had to be
-modified for EDK II are in the AppPkg\Applications\Python\PyMod-2.7.2 directory.  These
-files need to be copied into the corresponding directories within the extracted Python-2.7.2
-directory before Python can be built.
+A full distribution of the Python 3.6.8 has been included as part of AppPkg.  But only
+a subset of the features have been enabled for UEFI use case. Python files that had to be
+modified for EDK II are in the AppPkg\Applications\Python\Python-3.6.8\PyMod-3.6.8 directory.
+These files need to be copied into the corresponding directories within the Python-3.6.8
+directory before Python can be built. This can be achieved by running the srcprep.py available
+under AppPkg\Applications\Python\Python-3.6.8.
 
 
 BUILDING
