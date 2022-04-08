@@ -471,57 +471,61 @@ def _netbios_getnode():
             continue
         return int.from_bytes(bytes, 'big')
 
+
 # Thanks to Thomas Heller for ctypes and for his help with its use here.
 
 # If ctypes is available, use it to find system routines for UUID generation.
 # XXX This makes the module non-thread-safe!
 _uuid_generate_time = _UuidCreate = None
-try:
-    import ctypes, ctypes.util
-    import sys
-
-    # The uuid_generate_* routines are provided by libuuid on at least
-    # Linux and FreeBSD, and provided by libc on Mac OS X.
-    _libnames = ['uuid']
-    if not sys.platform.startswith('win'):
-        _libnames.append('c')
-    for libname in _libnames:
-        try:
-            lib = ctypes.CDLL(ctypes.util.find_library(libname))
-        except Exception:
-            continue
-        if hasattr(lib, 'uuid_generate_time'):
-            _uuid_generate_time = lib.uuid_generate_time
-            break
-    del _libnames
-
-    # The uuid_generate_* functions are broken on MacOS X 10.5, as noted
-    # in issue #8621 the function generates the same sequence of values
-    # in the parent process and all children created using fork (unless
-    # those children use exec as well).
-    #
-    # Assume that the uuid_generate functions are broken from 10.5 onward,
-    # the test can be adjusted when a later version is fixed.
-    if sys.platform == 'darwin':
-        if int(os.uname().release.split('.')[0]) >= 9:
-            _uuid_generate_time = None
-
-    # On Windows prior to 2000, UuidCreate gives a UUID containing the
-    # hardware address.  On Windows 2000 and later, UuidCreate makes a
-    # random UUID and UuidCreateSequential gives a UUID containing the
-    # hardware address.  These routines are provided by the RPC runtime.
-    # NOTE:  at least on Tim's WinXP Pro SP2 desktop box, while the last
-    # 6 bytes returned by UuidCreateSequential are fixed, they don't appear
-    # to bear any relationship to the MAC address of any network device
-    # on the box.
+if os.name != 'edk2':
+    # This code is not meant to run on UEFI environment
     try:
-        lib = ctypes.windll.rpcrt4
+        import ctypes, ctypes.util
+        import sys
+
+        # The uuid_generate_* routines are provided by libuuid on at least
+        # Linux and FreeBSD, and provided by libc on Mac OS X.
+        _libnames = ['uuid']
+        if not sys.platform.startswith('win'):
+            _libnames.append('c')
+        for libname in _libnames:
+            try:
+                lib = ctypes.CDLL(ctypes.util.find_library(libname))
+            except Exception:
+                continue
+            if hasattr(lib, 'uuid_generate_time'):
+                _uuid_generate_time = lib.uuid_generate_time
+                break
+        del _libnames
+
+        # The uuid_generate_* functions are broken on MacOS X 10.5, as noted
+        # in issue #8621 the function generates the same sequence of values
+        # in the parent process and all children created using fork (unless
+        # those children use exec as well).
+        #
+        # Assume that the uuid_generate functions are broken from 10.5 onward,
+        # the test can be adjusted when a later version is fixed.
+        if sys.platform == 'darwin':
+            if int(os.uname().release.split('.')[0]) >= 9:
+                _uuid_generate_time = None
+
+        # On Windows prior to 2000, UuidCreate gives a UUID containing the
+        # hardware address.  On Windows 2000 and later, UuidCreate makes a
+        # random UUID and UuidCreateSequential gives a UUID containing the
+        # hardware address.  These routines are provided by the RPC runtime.
+        # NOTE:  at least on Tim's WinXP Pro SP2 desktop box, while the last
+        # 6 bytes returned by UuidCreateSequential are fixed, they don't appear
+        # to bear any relationship to the MAC address of any network device
+        # on the box.
+        try:
+            lib = ctypes.windll.rpcrt4
+        except:
+            lib = None
+        _UuidCreate = getattr(lib, 'UuidCreateSequential',
+                              getattr(lib, 'UuidCreate', None))
     except:
-        lib = None
-    _UuidCreate = getattr(lib, 'UuidCreateSequential',
-                          getattr(lib, 'UuidCreate', None))
-except:
-    pass
+        pass
+
 
 def _unixdll_getnode():
     """Get the hardware address on Unix using ctypes."""
@@ -563,6 +567,8 @@ def getnode():
     import sys
     if sys.platform == 'win32':
         getters = _NODE_GETTERS_WIN32
+    elif sys.platform == 'uefi':
+        getters = []
     else:
         getters = _NODE_GETTERS_UNIX
 
