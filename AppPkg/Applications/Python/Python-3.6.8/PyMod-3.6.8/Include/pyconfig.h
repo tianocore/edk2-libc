@@ -870,7 +870,7 @@
 #undef HAVE_THREAD_H
 
 /* Define to 1 if you have the 'timegm' function. */
-#undef HAVE_TIMEGM
+#define HAVE_TIMEGM 1
 
 /* Define to 1 if you have the 'times' function. */
 #undef HAVE_TIMES

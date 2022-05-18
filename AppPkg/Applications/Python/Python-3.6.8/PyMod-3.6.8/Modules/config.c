@@ -83,7 +83,10 @@ extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
 extern PyObject* PyInit_faulthandler(void);
 // _ctypes
+#if defined(UEFI_MSVC_32) || defined(UEFI_MSVC_64)
 extern PyObject* PyInit__ctypes(void);
+#endif
+
 extern PyObject* init_sqlite3(void);
 
 // EfiPy
@@ -155,7 +158,9 @@ struct _inittab _PyImport_Inittab[] = {
     {"_string", PyInit__string},
     {"_stat", PyInit__stat},
     {"_opcode", PyInit__opcode},
-	{ "_ctypes", PyInit__ctypes },
+#if defined(UEFI_MSVC_32) || defined(UEFI_MSVC_64)
+    { "_ctypes", PyInit__ctypes },
+#endif
     /* Sentinel */
     {0, 0}
 };

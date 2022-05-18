@@ -112,7 +112,7 @@
 #endif
 
 
-#define SIFY_I( x ) L#x
+#define SIFY_I( x ) L"" #x
 #define SIFY( y )   SIFY_I( y )
 
 #ifndef PREFIX

@@ -251,23 +251,24 @@ Modules/zlib
   Modules/zlib/zutil.c                 #
 
 #Modules/ctypes
-  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/_ctypes.c              #
-  Modules/_ctypes/stgdict.c              #
-  Modules/_ctypes/libffi_msvc/prep_cif.c #
-  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/malloc_closure.c       #
-  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/libffi_msvc/ffi.c      #
-  Modules/_ctypes/cfield.c               #
-  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callproc.c             #
-  Modules/_ctypes/callbacks.c            #
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/_ctypes.c    | MSFT          #
+  Modules/_ctypes/stgdict.c           | MSFT   #
+  Modules/_ctypes/libffi_msvc/prep_cif.c  | MSFT#
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/malloc_closure.c   | MSFT    #
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/libffi_msvc/ffi.c  | MSFT     #
+  Modules/_ctypes/cfield.c    | MSFT           #
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callproc.c  | MSFT           #
+  Modules/_ctypes/callbacks.c        | MSFT    #
 
 [Sources.IA32]
-  Modules/_ctypes/libffi_msvc/win32.c   #
+  Modules/_ctypes/libffi_msvc/win32.c  | MSFT #
 
 [Sources.X64]
-  Modules/_ctypes/libffi_msvc/win64.asm   #
+  Modules/_ctypes/libffi_msvc/win64.asm  | MSFT #
 
 [BuildOptions]
   MSFT:*_*_*_CC_FLAGS = /GL- /Oi- /wd4018 /wd4054 /wd4055 /wd4101 /wd4131 /wd4152 /wd4204 /wd4210 /wd4244 /wd4267 /wd4305 /wd4310 /wd4389 /wd4701 /wd4702 /wd4706 /wd4456 /wd4312 /wd4457 /wd4459 /wd4474 /wd4476 /I$(WORKSPACE)\AppPkg\Applications\Python\Python-3.6.8\Include /DHAVE_MEMMOVE /DUSE_PYEXPAT_CAPI /DXML_STATIC -D UEFI /WX- /DXML_POOR_ENTROPY /DUEFI_C_SOURCE
+  GCC:*_*_*_CC_FLAGS = -Wno-unused-function -Wno-format -Wno-error -fno-strict-aliasing -I$(WORKSPACE)/AppPkg/Applications/Python/Python-3.6.8/Include -DHAVE_MEMMOVE -DUSE_PYEXPAT_CAPI -DXML_STATIC -DXML_POOR_ENTROPY
 
 [BuildOptions.IA32]
   MSFT:*_*_*_CC_FLAGS = /DUEFI_MSVC_32
