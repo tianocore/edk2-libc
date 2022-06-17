@@ -193,3 +193,10 @@ unsigned long long __umodti3(unsigned long long Dividend, unsigned long long Div
 
   return (unsigned long long) Remainder;
 }
+
+INT64 __divmoddi4 (INT64 num, INT64 den, INT64 *rem_p)
+{
+  DEBUG((DEBUG_INFO, "%a:\n", __func__));
+  return DivS64x64Remainder (num, den, rem_p);
+}
+

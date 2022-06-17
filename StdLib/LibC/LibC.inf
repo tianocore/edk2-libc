@@ -46,6 +46,7 @@
   Main/Ia32/fpu_rmode.S   | GCC
   Main/Ia32/isinfl.c
   Main/Ia32/isnanl.c
+  Main/Ia32/ftol2.obj     | MSFT
 
   # Compiler helper (C RunTime) functions
   CRT/Ia32/llmul.c          | MSFT    # __allmul
@@ -88,9 +89,6 @@
 [Sources.AARCH64]
   Main/Arm/flt_rounds.c
 
-[Binaries.IA32]
-  LIB|Main/Ia32/ftol2.obj|*|MSFT
-
 [Packages]
   StdLib/StdLib.dec
   StdLibPrivateInternalFiles/DoNotUse.dec
@@ -116,4 +114,5 @@
 #
 [BuildOptions]
   MSFT:*_*_IA32_CC_FLAGS = /GL-
+  GCC:*_*_IA32_CC_FLAGS = -fno-lto
   GCC:*_*_ARM_CC_FLAGS = -fno-lto
