@@ -1155,8 +1155,13 @@
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
 
+#ifdef UEFI_C_SOURCE
+/* Define if you want documentation strings in extension modules */
+#define WITH_DOC_STRINGS 1
+#else
 /* Define if you want documentation strings in extension modules */
 #undef WITH_DOC_STRINGS
+#endif
 
 /* Define if you want to use the new-style (Openstep, Rhapsody, MacOS) dynamic
    linker (dyld) instead of the old-style (NextStep) dynamic linker (rld).
