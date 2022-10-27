@@ -21,7 +21,7 @@ function usage {
 
 function error {
     echo Failed to Create Python EFI Package
-    echo Python368.efi application is not available at "Build/AppPkg/$TARGET"_"$TOOL_CHAIN_TAG/$ARCH/"
+    echo Python.efi application is not available at "Build/AppPkg/$TARGET"_"$TOOL_CHAIN_TAG/$ARCH/"
     echo Follow the instructions in Py368ReadMe.txt to build Python interpreter
     echo Then use this script to create a Python EFI package
 }
@@ -60,7 +60,7 @@ then
 fi
 
 cd ../../../../
-PYTHON_BIN="Build/AppPkg/$TARGET"_"$TOOL_CHAIN_TAG/$ARCH/Python368.efi"
+PYTHON_BIN="Build/AppPkg/$TARGET"_"$TOOL_CHAIN_TAG/$ARCH/Python.efi"
 if [ ! -f $PYTHON_BIN ]
 then
     error
@@ -95,6 +95,3 @@ then
 else
     echo Python EFI package available at `pwd`/$OUT_FOLDER
 fi
-
-
-

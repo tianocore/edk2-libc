@@ -167,24 +167,24 @@ Execute the below command to build the X64 version of the Python 3.6.8 interpret
 -----------------------------------------------------
 
 To create an usable Python UEFI package with all the dependencies from the build environment,
-you can use the bash shell script create_python368_pkg.sh available under /AppPkg/Applications/Python/Python-3.6.8
+you can use the bash shell script create_python_pkg.sh available under /AppPkg/Applications/Python/Python-3.6.8
 folder.
 
 Use the following commands to create Python UEFI package::
 
         bash$ cd ~/src/edk2/AppPkg/Applications/Python/Python-3.6.8/
-        bash$ chmod 777 create_python368_pkg.sh
-        ./create_python368_pkg.sh GCC5 RELEASE X64 myPyUEFI
+        bash$ chmod 777 create_python_pkg.sh
+        ./create_python_pkg.sh GCC5 RELEASE X64 myPyUEFI
 
 where GCC5 refers to the tool chain, RELEASE refers to the build type, X64 refers to the architecture
 myPyUEFI refers to the name of the folder where the Python UEFI package needs to be created.
 
-When you run the create_python368_pkg.sh without any parameters it lists the help
+When you run the create_python_pkg.sh without any parameters it lists the help
 information as shown below:
 
 Shell Script to create Python EFI Package.
 
-Usage: ./create_python368_pkg.sh <ToolChain> <Target> <Architecture> <OutFolder>
+Usage: ./create_python_pkg.sh <ToolChain> <Target> <Architecture> <OutFolder>
 
 Where
     * ToolChain     :  name of the tool chain such as GCC5

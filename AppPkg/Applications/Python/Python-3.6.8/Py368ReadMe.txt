@@ -98,7 +98,7 @@ target system.
 These directories, on the target system, are populated from the development
 system as follows:
 
-  * \Efi\Tools receives a copy of Build/AppPkg/RELEASE_VS2017/X64/Python368.efi.
+  * \Efi\Tools receives a copy of Build/AppPkg/RELEASE_VS2017/X64/Python.efi.
                                                ^^^^^^^^^^^^^^^^
     Modify the host path to match your build type and compiler.
 
@@ -115,12 +115,12 @@ system as follows:
     the \Efi\StdLib\lib\python36.8\lib-dynload directory.  This functionality is not
     yet implemented.
 
-  A script, create_python368_pkg.bat , is provided which facilitates the population
+  A script, create_python_pkg.bat , is provided which facilitates the population
   of the target EFI package.  Execute this script from within the
   AppPkg/Applications/Python/Python-3.6.8 directory, providing the Tool Chain, Target
   Build and destination directory which is the path to the destination directory.  
   The appropriate contents of the AppPkg/Applications/Python/Python-3.6.8/Lib and
-  Python368.efi Application from Build/AppPkg/RELEASE_VS2017/X64/ will be
+  Python.efi Application from Build/AppPkg/RELEASE_VS2017/X64/ will be
                                               ^^^^^^^^^^^^^^   
   copied into the specified destination directory.
 
@@ -130,10 +130,10 @@ system as follows:
 6. Example: Enabling socket support
 ===================================
   1.  enable {"_socket", init_socket}, in PyMod-3.6.8\Modules\config.c
-  2.  enable LibraryClasses BsdSocketLib and EfiSocketLib in Python368.inf.
-  3.  Build Python368
+  2.  enable LibraryClasses BsdSocketLib and EfiSocketLib in Python368.inf
+  3.  Build Python interpreter application using below command
           build -a X64 -p AppPkg\AppPkg.dsc
-  6.  copy Build\AppPkg\RELEASE_VS2017\X64\Python368.efi to \Efi\Tools on your
+  6.  copy Build\AppPkg\RELEASE_VS2017\X64\Python.efi to \Efi\Tools on your
       target system. Replace "RELEASE_VS2017", in the source path, with
       values appropriate for your tool chain.
 
@@ -146,7 +146,7 @@ system as follows:
 
   EXAMPLE:
       Shell> fs0:
-      FS0:\> python368
+      FS0:\> python
       Python 3.6.8 (default, Jun 24 2015, 17:38:32) [C] on uefi
       Type "help", "copyright", "credits" or "license" for more information.
       >>> exit()
