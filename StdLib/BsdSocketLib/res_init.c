@@ -123,7 +123,9 @@ static u_int32_t net_mask __P((struct in_addr));
 struct __res_state _res
 # if defined(__BIND_RES_TEXT)
     = { RES_TIMEOUT, }  /* Motorola, et al. */
-# endif
+# else
+    = {0}
+# endif  
     ;
 
 
