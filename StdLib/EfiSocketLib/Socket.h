@@ -591,9 +591,9 @@ EFI_STATUS
 **/
 typedef
 VOID
-(* PFN_API_IO_COMPLETE) (
+(EFIAPI * PFN_API_IO_COMPLETE) (
   IN EFI_EVENT Event,
-  IN ESL_IO_MGMT * pIo
+  IN VOID *pIo //IN ESL_IO_MGMT * pIo
   );
 
 /**
@@ -909,9 +909,9 @@ EFI_STATUS
 **/
 typedef
 VOID
-(* PFN_API_TX_COMPLETE) (
+(EFIAPI * PFN_API_TX_COMPLETE) (
   IN EFI_EVENT Event,
-  IN ESL_IO_MGMT * pIo
+  IN VOID *pIo //IN ESL_IO_MGMT * pIo
   );
 
 /**
@@ -1433,10 +1433,10 @@ EslSocketPortClose (
   @param [in] pPort     Address of an ::ESL_PORT structure.
 
 **/
-VOID
+EFIAPI VOID
 EslSocketPortCloseComplete (
   IN EFI_EVENT Event,
-  IN ESL_PORT * pPort
+  IN VOID *context
   );
 
 /**
