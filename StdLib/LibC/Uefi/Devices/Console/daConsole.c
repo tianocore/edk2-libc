@@ -141,6 +141,10 @@ da_ConSeek(
     EFIerrno = RETURN_UNSUPPORTED;
     return -1;
   }
+
+  if(Position == 0 && whence == SEEK_CUR)
+     return Position;
+  
   // Everything is OK to do the final verification and "seek".
   Proto = (EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *)Stream->Dev;
   CursorPos.Offset = Position;
