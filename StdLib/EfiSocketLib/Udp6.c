@@ -478,16 +478,17 @@ EslUdp6RemoteAddressSet (
   @param [in] pIo       Address of an ::ESL_IO_MGMT structure
 
 **/
-VOID
+EFIAPI VOID
 EslUdp6RxComplete (
   IN EFI_EVENT Event,
-  IN ESL_IO_MGMT * pIo
+  IN VOID *context
   )
 {
   size_t LengthInBytes;
   ESL_PACKET * pPacket;
   EFI_UDP6_RECEIVE_DATA * pRxData;
   EFI_STATUS Status;
+  ESL_IO_MGMT * pIo = (ESL_IO_MGMT*)context;
   
   DBG_ENTER ( );
 
@@ -1021,10 +1022,10 @@ EslUdp6TxBuffer (
   @param [in] pIo       Address of an ::ESL_IO_MGMT structure
 
 **/
-VOID
+EFIAPI VOID
 EslUdp6TxComplete (
   IN EFI_EVENT Event,
-  IN ESL_IO_MGMT * pIo
+  IN VOID *context
   )
 {
   UINT32 LengthInBytes;
@@ -1032,6 +1033,7 @@ EslUdp6TxComplete (
   ESL_PACKET * pPacket;
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
+  ESL_IO_MGMT * pIo = (ESL_IO_MGMT*)context;
   
   DBG_ENTER ( );
   

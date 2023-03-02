@@ -68,10 +68,10 @@ EslTcp4ConnectStart (
   @param [in] pPort     Address of an ::ESL_PORT structure.
 
 **/
-VOID
+EFIAPI VOID
 EslTcp4ListenComplete (
   IN EFI_EVENT Event,
-  IN ESL_PORT * pPort
+  IN VOID *contet
   );
 
 
@@ -185,10 +185,10 @@ EslTcp4Accept (
   @param [in] pPort     Address of an ::ESL_PORT structure.
 
 **/
-VOID
+EFIAPI VOID
 EslTcp4ConnectComplete (
   IN EFI_EVENT Event,
-  IN ESL_PORT * pPort
+  IN VOID *context
   )
 {
   BOOLEAN bRemoveFirstPort;
@@ -197,7 +197,8 @@ EslTcp4ConnectComplete (
   ESL_SOCKET * pSocket;
   ESL_TCP4_CONTEXT * pTcp4;
   EFI_STATUS Status;
-
+  ESL_PORT * pPort = (ESL_PORT*)context;
+  
   DBG_ENTER ( );
 
   //
@@ -653,7 +654,7 @@ EslTcp4Listen (
         pTcp4 = &pPort->Context.Tcp4;
         Status = gBS->CreateEvent ( EVT_NOTIFY_SIGNAL,
                                     TPL_SOCKETS,
-                                    (EFI_EVENT_NOTIFY)EslTcp4ListenComplete,
+                                    EslTcp4ListenComplete,
                                     pPort,
                                     &pTcp4->ListenToken.CompletionToken.Event );
         if ( EFI_ERROR ( Status )) {
@@ -825,10 +826,10 @@ EslTcp4Listen (
   @param [in] pPort     Address of an ::ESL_PORT structure.
 
 **/
-VOID
+EFIAPI VOID
 EslTcp4ListenComplete (
   IN EFI_EVENT Event,
-  IN ESL_PORT * pPort
+  IN VOID *context
   )
 {
   EFI_HANDLE ChildHandle;
@@ -842,6 +843,7 @@ EslTcp4ListenComplete (
   EFI_STATUS Status;
   EFI_HANDLE TcpPortHandle;
   EFI_STATUS TempStatus;
+  ESL_PORT * pPort = (ESL_PORT*)context;
 
   DBG_ENTER ( );
   VERIFY_AT_TPL ( TPL_SOCKETS );
@@ -1263,7 +1265,7 @@ EslTcp4PortAllocate (
     pTcp4 = &pPort->Context.Tcp4;
     Status = gBS->CreateEvent (  EVT_NOTIFY_SIGNAL,
                                  TPL_SOCKETS,
-                                 (EFI_EVENT_NOTIFY)EslSocketPortCloseComplete,
+                                 EslSocketPortCloseComplete,
                                  pPort,
                                  &pTcp4->CloseToken.CompletionToken.Event);
     if ( EFI_ERROR ( Status )) {
@@ -1282,7 +1284,7 @@ EslTcp4PortAllocate (
     //
     Status = gBS->CreateEvent (  EVT_NOTIFY_SIGNAL,
                                  TPL_SOCKETS,
-                                 (EFI_EVENT_NOTIFY)EslTcp4ConnectComplete,
+                                 EslTcp4ConnectComplete,
                                  pPort,
                                  &pTcp4->ConnectToken.CompletionToken.Event);
     if ( EFI_ERROR ( Status )) {
@@ -1732,16 +1734,17 @@ EslTcp4RemoteAddressSet (
   @param [in] pIo       Address of an ::ESL_IO_MGMT structure
 
 **/
-VOID
+EFIAPI VOID
 EslTcp4RxComplete (
   IN EFI_EVENT Event,
-  IN ESL_IO_MGMT * pIo
+  IN VOID *context
   )
 {
   BOOLEAN bUrgent;
   size_t LengthInBytes;
   ESL_PACKET * pPacket;
   EFI_STATUS Status;
+  ESL_IO_MGMT * pIo = (ESL_IO_MGMT*)context;
 
   DBG_ENTER ( );
 
@@ -2121,10 +2124,10 @@ EslTcp4TxBuffer (
   @param [in] pIo       The ESL_IO_MGMT structure address
 
 **/
-VOID
+EFIAPI VOID
 EslTcp4TxComplete (
   IN EFI_EVENT Event,
-  IN ESL_IO_MGMT * pIo
+  IN VOID *context
   )
 {
   UINT32 LengthInBytes;
@@ -2132,6 +2135,7 @@ EslTcp4TxComplete (
   ESL_PORT * pPort;
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
+  ESL_IO_MGMT * pIo = (ESL_IO_MGMT*)context;
 
   DBG_ENTER ( );
 
@@ -2178,10 +2182,10 @@ EslTcp4TxComplete (
   @param [in] pIo       The ESL_IO_MGMT structure address
 
 **/
-VOID
+EFIAPI VOID
 EslTcp4TxOobComplete (
   IN EFI_EVENT Event,
-  IN ESL_IO_MGMT * pIo
+  IN VOID *context
   )
 {
   UINT32 LengthInBytes;
@@ -2189,6 +2193,7 @@ EslTcp4TxOobComplete (
   ESL_PORT * pPort;
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
+  ESL_IO_MGMT * pIo = (ESL_IO_MGMT*)context;
 
   DBG_ENTER ( );
 
