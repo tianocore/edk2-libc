@@ -62,8 +62,10 @@ AppPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/AppPkg
 M: Rebecca Cran <rebecca@bsdio.com>
 M: Michael D Kinney <michael.d.kinney@intel.com>
+M: Jayaprakash N <n.jayaprakash@intel.com>
 
 StdLib, StdLibPrivateInternalFiles
 W: https://github.com/tianocore/tianocore.github.io/wiki/StdLib
 M: Rebecca Cran <rebecca@bsdio.com>
 M: Michael D Kinney <michael.d.kinney@intel.com>
+M: Jayaprakash N <n.jayaprakash@intel.com>
