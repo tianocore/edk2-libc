@@ -3,7 +3,7 @@
     Derived from posixmodule.c in Python 2.7.2.
 
     Copyright (c) 2015, Daryl McDaniel. All rights reserved.<BR>
-    Copyright (c) 2011 - 2021, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2011 - 2023, Intel Corporation. All rights reserved.<BR>
     This program and the accompanying materials are licensed and made available under
     the terms and conditions of the BSD License that accompanies this distribution.
     The full text of the license may be found at
@@ -23,11 +23,19 @@
 #include  <sys/syslimits.h>
 #include  <Uefi.h>
 #include  <Library/UefiLib.h>
+#include  <Library/PciLib.h>
+#include  <Library/IoLib.h>
 #include  <Library/UefiRuntimeServicesTableLib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+PyTypeObject EfiGuidType;
+
+extern void _swsmi( unsigned int smi_code_data, unsigned int rax_value, unsigned int rbx_value, unsigned int rcx_value, unsigned int rdx_value, unsigned int rsi_value, unsigned int rdi_value );
+// -- Support routines
+EFI_STATUS GuidToStr( IN EFI_GUID *guid, IN OUT UINT8 *str_buffer );
 
 PyDoc_STRVAR(edk2__doc__,
              "This module provides access to UEFI firmware functionality that is\n\
@@ -3800,6 +3808,497 @@ edk2_abort(PyObject *self, PyObject *noargs)
     return NULL;
 }
 
+unsigned int ReadPCICfg(
+  unsigned char bus,
+  unsigned char dev,
+  unsigned char fun,
+  unsigned char off,
+  unsigned char len // 1, 2, 4 bytes
+  )
+{
+  unsigned int result = 0;
+
+  if (1 == len) result = PciRead8(PCI_LIB_ADDRESS(bus, dev, fun, off));
+  else if (2 == len) result = PciRead16(PCI_LIB_ADDRESS(bus, dev, fun, off));
+  else if (4 == len) result = PciRead32(PCI_LIB_ADDRESS(bus, dev, fun, off));
+  return result;
+}
+
+void WritePCICfg(
+  unsigned char bus,
+  unsigned char dev,
+  unsigned char fun,
+  unsigned char off,
+  unsigned char len, // 1, 2, 4 bytes
+  unsigned int val
+  )
+{
+  if (1 == len) PciWrite8(PCI_LIB_ADDRESS(bus, dev, fun, off), (val & 0xFF));
+  else if (2 == len) PciWrite16(PCI_LIB_ADDRESS(bus, dev, fun, off), (val & 0xFFFF));
+  else if (4 == len) PciWrite32(PCI_LIB_ADDRESS(bus, dev, fun, off), val);
+}
+
+PyDoc_STRVAR(efi_rdmsr__doc__,
+"rdmsr(ecx) -> (eax,edx)\n\
+Read the given MSR.");
+
+static PyObject *
+edk2_rdmsr(PyObject *self, PyObject *args)
+{
+  unsigned int vecx, veax, vedx;
+  UINT64   data = 0;
+  if (!PyArg_ParseTuple(args, "I", &vecx))
+    return NULL;
+  Py_BEGIN_ALLOW_THREADS
+  data = AsmReadMsr64(vecx);
+  Py_END_ALLOW_THREADS
+  veax = (UINT32)data;
+  vedx = (UINT64)data >> 32;
+  return Py_BuildValue("(II)", (unsigned long)veax, (unsigned long)vedx);
+}
+
+PyDoc_STRVAR(efi_wrmsr__doc__,
+"wrmsr(ecx, eax, edx) -> None\n\
+Write edx:eax to the given MSR.");
+
+static PyObject *
+edk2_wrmsr(PyObject *self, PyObject *args)
+{
+  unsigned int vecx, veax, vedx;
+  UINT64       data = 0;
+  if (!PyArg_ParseTuple(args, "III", &vecx, &veax, &vedx))
+    return NULL;
+  data = vedx << 32 | veax;
+  Py_BEGIN_ALLOW_THREADS
+  AsmWriteMsr64(vecx, data);
+  Py_END_ALLOW_THREADS
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+PyDoc_STRVAR(efi_swsmi__doc__,
+"swsmi(smi_code_data, rax_value, rbx_value, rcx_value, rdx_value, rsi_value, rdi_value) -> None\n\
+Triggering Software SMI");
+
+static PyObject *
+posix_swsmi(PyObject *self, PyObject *args)
+{
+  unsigned int smi_code_data, rax_value, rbx_value, rcx_value, rdx_value, rsi_value, rdi_value;
+  if (!PyArg_Parse(args, "(IIIIIII)", &smi_code_data, &rax_value, &rbx_value, &rcx_value, &rdx_value, &rsi_value, &rdi_value))
+    return NULL;
+  Py_BEGIN_ALLOW_THREADS
+  _swsmi( smi_code_data, rax_value, rbx_value, rcx_value, rdx_value, rsi_value, rdi_value );
+  Py_END_ALLOW_THREADS
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+PyDoc_STRVAR(efi_cpuid__doc__,
+"cpuid(eax, ecx) -> (eax:ebx:ecx:edx)\n\
+Read the CPUID.";);
+
+static PyObject *
+edk2_cpuid(PyObject *self, PyObject *args)
+{
+	UINT32 eax, ecx, rax_value, rbx_value, rcx_value, rdx_value;
+    if (!PyArg_ParseTuple(args, "II", &eax, &ecx))
+      return NULL;
+	Py_BEGIN_ALLOW_THREADS
+    AsmCpuidEx( eax, ecx, &rax_value, &rbx_value, &rcx_value, &rdx_value);
+    Py_END_ALLOW_THREADS
+    return Py_BuildValue("(IIII))",  (unsigned long)rax_value,  (unsigned long)rbx_value,  (unsigned long)rcx_value,  (unsigned long)rdx_value);
+}
+
+PyDoc_STRVAR(efi_allocphysmem__doc__,
+"allocphysmem(length, max_pa) -> (va)\n\
+Use malloc to allocate space in memory.";);
+
+static PyObject *
+posix_allocphysmem(PyObject *self, PyObject *args)
+{
+	unsigned int length, max_pa;
+    void *va;
+    if (!PyArg_ParseTuple(args, "II", &length, &max_pa))
+      return NULL;
+      
+	Py_BEGIN_ALLOW_THREADS
+    va = malloc(length);
+    Py_END_ALLOW_THREADS
+
+    // return Py_BuildValue("(K)",  (unsigned long)va);
+    return Py_BuildValue("(I)",  (unsigned long)va);
+}
+
+PyDoc_STRVAR(efi_readio__doc__,
+"readio(addr, size) -> (int)\n\
+Read the value (size == 1, 2, or 4 bytes) of the specified IO port.");
+
+static PyObject *
+edk2_readio(PyObject *self, PyObject *args)
+{
+  unsigned int addr, sz, result;
+  short addrs;
+
+  if (!PyArg_ParseTuple(args, "II", &addr, &sz))
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  result = 0;
+  addrs = (short)(addr & 0xffff);
+  if (1 == sz) result = (IoRead8(addrs) & 0xFF);
+  else if (2 == sz) result = (IoRead16(addrs) & 0xFFFF);
+  else if (4 == sz) result = IoRead32(addrs);
+  Py_END_ALLOW_THREADS
+  return PyLong_FromUnsignedLong((unsigned long)result);
+}
+
+PyDoc_STRVAR(efi_writeio__doc__,
+"writeio(addr, size, value) -> None\n\
+Write the value (size == 1, 2, or 4 bytes) of the specified IO port.");
+
+static PyObject *
+edk2_writeio(PyObject *self, PyObject *args)
+{
+  unsigned int addr, sz, value;
+  short addrs;
+
+  if (!PyArg_ParseTuple(args, "III", &addr, &sz, &value))
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  addrs = (short)(addr & 0xffff);
+  if (1 == sz) IoWrite8((unsigned char)(value & 0xFF), addrs);
+  else if (2 == sz) IoWrite16((unsigned short)(value & 0xFFFF), addrs);
+  else if (4 == sz) IoWrite32(value, addrs);
+  Py_END_ALLOW_THREADS
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+PyDoc_STRVAR(efi_readpci__doc__,
+"readpci(bus,dev,func,addr,size) -> (int)\n\
+Read the value (size == 1, 2, or 4 bytes) of the specified PCI b/d/f.");
+
+static PyObject *
+edk2_readpci(PyObject *self, PyObject *args)
+{
+  unsigned int bus, dev, func, off, sz, result;
+
+  if (!PyArg_ParseTuple(args, "IIIII", &bus, &dev, &func, &off, &sz))
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  result = ReadPCICfg( bus, dev, func, off, sz );
+  Py_END_ALLOW_THREADS
+
+  return PyLong_FromUnsignedLong((unsigned long)result);
+}
+
+PyDoc_STRVAR(efi_writepci__doc__,
+"writepci(bus,dev,func,addr,value,len) -> None\n\
+Write the value to the specified PCI b/d/f.  Len is value size (either 1, 2, or 4 bytes).");
+
+static PyObject *
+edk2_writepci(PyObject *self, PyObject *args)
+{
+  unsigned int bus, dev, func, off, val, len;
+
+  if (!PyArg_ParseTuple(args, "IIIIII", &bus, &dev, &func, &off, &val, &len))
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  WritePCICfg( bus, dev, func, off, len, val );
+  Py_END_ALLOW_THREADS
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+PyDoc_STRVAR(efi_readmem__doc__,
+"readmem(addr_lo, addr_hi, len) -> ByteString\n\
+Read the given memory address.");
+
+static PyObject *
+posix_readmem(PyObject *self, PyObject *args)
+{
+  PyObject  *data;
+  UINT32     addr_lo, addr_hi;
+  char      *buffer, *cbuffer, *addr;
+  int        len, index;
+
+  if (!PyArg_ParseTuple(args, "III", &addr_lo, &addr_hi, &len))
+    return NULL;
+
+#ifdef MDE_CPU_X64
+  addr = (unsigned char*)((UINT64)addr_lo | ((UINT64)addr_hi << 32));
+#else
+  addr = (unsigned char*)addr_lo;
+#endif
+
+  buffer = malloc(len);
+  if (buffer == NULL)
+    return NULL;
+
+  cbuffer = buffer;
+  index = len;
+
+  Py_BEGIN_ALLOW_THREADS
+
+  while(index--){
+    *cbuffer = *addr;
+    cbuffer++;
+    addr++;
+  }
+
+  Py_END_ALLOW_THREADS
+  
+  data = Py_BuildValue("y#", buffer, len);
+  free(buffer);
+
+  return data;
+}
+
+PyDoc_STRVAR(efi_readmem_dword__doc__,
+"readmem_dword(addr_lo, addr_hi) -> (int32)\n\
+Read the given memory address and return 32-bit value.");
+
+static PyObject *
+posix_readmem_dword(PyObject *self, PyObject *args)
+{
+  unsigned int result, *addr;
+  UINT32 addr_lo, addr_hi;
+
+  if (!PyArg_ParseTuple(args, "II", &addr_lo, &addr_hi))
+    return NULL;
+
+#ifdef MDE_CPU_X64
+  addr = (unsigned int*)((UINT64)addr_lo | ((UINT64)addr_hi << 32));
+#else
+  addr = (unsigned int*)addr_lo;
+#endif
+
+  Py_BEGIN_ALLOW_THREADS
+  result = *addr;
+  Py_END_ALLOW_THREADS
+
+  return PyLong_FromUnsignedLong((unsigned long)result);
+}
+
+PyDoc_STRVAR(efi_writemem__doc__,
+"writemem(addr_lo, addr_hi, buf) -> None\n\
+Write the buf (PyString) to the given memory address.");
+
+static PyObject *
+posix_writemem(PyObject *self, PyObject *args)
+{
+  char *buf, *addr;
+  int len;
+  UINT32 addr_lo, addr_hi;
+
+  if (!PyArg_ParseTuple(args, "IIs#", &addr_lo, &addr_hi, &buf, &len))
+    return NULL;
+
+#ifdef MDE_CPU_X64
+  addr = (unsigned char*)((UINT64)addr_lo | ((UINT64)addr_hi << 32));
+#else
+  addr = (unsigned char*)addr_lo;
+#endif
+
+  Py_BEGIN_ALLOW_THREADS
+  while(len--){
+    *addr = *buf;
+    buf++;
+    addr++;
+  }
+  Py_END_ALLOW_THREADS
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+PyDoc_STRVAR(efi_writemem_dword__doc__,
+"writemem_dword(addr_lo, addr_hi, val) -> None\n\
+Write the 32-bit value to the given memory address.");
+
+static PyObject *
+posix_writemem_dword(PyObject *self, PyObject *args)
+{
+  unsigned int *addr, val;
+  UINT32 addr_lo, addr_hi;
+
+  if (!PyArg_ParseTuple(args, "III", &addr_lo, &addr_hi, &val))
+    return NULL;
+
+#ifdef MDE_CPU_X64
+  addr = (unsigned int*)((UINT64)addr_lo | ((UINT64)addr_hi << 32));
+#else
+  addr = (unsigned int*)addr_lo;
+#endif
+
+  Py_BEGIN_ALLOW_THREADS
+  *addr = val;
+  Py_END_ALLOW_THREADS
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+PyDoc_STRVAR(MiscRT_GetVariable__doc__,
+"(Status, Attributes, Data, DataSize) = GetVariable(VariableName, GUID, DataSize)\n\n\
+Returns the value of a variable.");
+
+static
+PyObject *
+MiscRT_GetVariable(PyObject *self, PyObject *args)
+{
+  PyObject     *data_out;
+  CHAR16       *VariableName;
+  EFI_GUID      VendorGuid;
+  UINT32        GuidSize;
+  UINT32        Attributes;
+  UINT64        DataSize;
+  char         *Data;
+  const CHAR16 *GuidIn;
+  EFI_STATUS    Status;
+
+  if(!PyArg_ParseTuple(args, "uu#K", &VariableName, &GuidIn, &GuidSize, &DataSize))
+  {
+    return NULL;
+  }
+
+  StrToGuid(GuidIn, &VendorGuid);
+
+  Data = malloc(DataSize);
+  if (!Data)
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  Status = gRT->GetVariable(VariableName, &VendorGuid, &Attributes, (UINTN *)&DataSize, (void*)Data);
+  Py_END_ALLOW_THREADS
+
+  data_out = Py_BuildValue("(IIy#K)", (UINT32)Status, Attributes, Data, DataSize, DataSize);
+  free(Data);
+
+  return data_out;
+}
+
+PyDoc_STRVAR(MiscRT_GetNextVariableName__doc__,
+"(Status, VariableNameSize, VariableName, VendorGuid) = GetNextVariableName(NameSize, VariableName, GUID)\n\n\
+Enumerates the current variable names.");
+
+static
+PyObject *
+MiscRT_GetNextVariableName(PyObject *self, PyObject *args)
+{
+  UINT64        NameSize;
+  CHAR16       *VariableName, *NameIn;
+  UINT32        GuidSize, VariableNameSize, i;
+  EFI_GUID      VendorGuid;
+  EFI_STATUS    Status;
+  const char   *GuidIn; 
+  char         *VendorGuidPtr, *GuidOut[37];
+
+  if(!PyArg_ParseTuple(args, "Ky#s#", &NameSize, &NameIn, &VariableNameSize, &GuidIn, &GuidSize))
+  {
+    return NULL;
+  }
+
+  VendorGuidPtr = (char *)&VendorGuid;
+  for (i=0; i<sizeof(VendorGuid); i++)
+    VendorGuidPtr[i] = GuidIn[i];
+
+  for (i=0; i<NameSize && NameIn[i] != (CHAR16)0; i++)
+    VariableName[i] = NameIn[i];
+  VariableName[i] = NameIn[i];
+
+  Py_BEGIN_ALLOW_THREADS
+  Status = gRT->GetNextVariableName((UINTN *)&NameSize, (CHAR16 *)VariableName, &VendorGuid);
+  Py_END_ALLOW_THREADS
+
+  GuidToStr((EFI_GUID *)&VendorGuid, (UINT8 *)GuidOut);
+
+  return Py_BuildValue("(IuKs)", (UINT32) Status, VariableName, NameSize, &GuidOut);
+}
+
+PyDoc_STRVAR(MiscRT_SetVariable__doc__,
+"(Status, DataSize, GUID) = SetVariable(VariableName, GUID, Attributes, Data, DataSize)\n\n\
+Sets the value of a variable.");
+
+static
+PyObject *
+MiscRT_SetVariable(PyObject *self, PyObject *args)
+{
+  CHAR16       *VariableName;
+  UINT64        DataSize;
+  char         *Data, *guidptr, *VendorGuidPtr;
+  char         *GuidOut[37];
+  EFI_STATUS    Status;
+  EFI_GUID      VendorGuid;
+  UINT32        Attributes;
+  UINT32        GuidSize, strDataSize;
+  const CHAR16 *GuidIn;
+
+  if(!PyArg_ParseTuple(args, "uu#Is#I", &VariableName, &GuidIn, &GuidSize, &Attributes, &Data, &strDataSize, &DataSize))
+  {
+    return NULL;
+  }
+
+  StrToGuid(GuidIn, &VendorGuid);
+
+  Py_BEGIN_ALLOW_THREADS
+  Status = gRT->SetVariable(VariableName, &VendorGuid, Attributes, (UINTN)DataSize, (void*)Data);
+  Py_END_ALLOW_THREADS
+
+  GuidToStr((EFI_GUID *)&VendorGuid, (UINT8 *)GuidOut);
+
+//   return Py_BuildValue("(IKu#)", (UINT32) Status, DataSize, &VendorGuid, sizeof(VendorGuid));
+  return Py_BuildValue("(IKs)", (UINT32) Status, DataSize, &GuidOut);
+}
+
+
+/**
+  This function prints a GUID to a buffer
+  
+  @param guid                    Pointer to a GUID
+  
+  @param str_buffer              Pointer to a str buffer
+  
+
+  @retval EFI_SUCCESS            GUID was printed
+  
+  @retval EFI_INVALID_PARAMETER  GUID was NULL
+
+**/
+EFI_STATUS
+GuidToStr (
+  IN EFI_GUID  *guid,
+  IN OUT UINT8 *str_buffer
+  )
+{
+  if (guid == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  sprintf (
+    (CHAR8 *)str_buffer,
+    "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    (unsigned) guid->Data1,
+    guid->Data2,
+    guid->Data3,
+    guid->Data4[0],
+    guid->Data4[1],
+    guid->Data4[2],
+    guid->Data4[3],
+    guid->Data4[4],
+    guid->Data4[5],
+    guid->Data4[6],
+    guid->Data4[7]
+    );
+
+  return EFI_SUCCESS;
+}
+
 static PyMethodDef edk2_methods[] = {
     {"access",          edk2_access,     METH_VARARGS, edk2_access__doc__},
 #ifdef HAVE_TTYNAME
@@ -4057,7 +4556,23 @@ static PyMethodDef edk2_methods[] = {
 #ifdef HAVE_PATHCONF
     {"pathconf",        edk2_pathconf, METH_VARARGS, edk2_pathconf__doc__},
 #endif
-    {"abort",           edk2_abort,      METH_NOARGS,  edk2_abort__doc__},
+    {"abort",               edk2_abort,      METH_NOARGS,  edk2_abort__doc__},
+    {"rdmsr",               edk2_rdmsr,                 METH_VARARGS, efi_rdmsr__doc__},
+    {"wrmsr",               edk2_wrmsr,                 METH_VARARGS, efi_wrmsr__doc__},
+    {"readpci",             edk2_readpci,               METH_VARARGS, efi_readpci__doc__},
+    {"writepci",            edk2_writepci,              METH_VARARGS, efi_writepci__doc__},
+    {"readmem",             posix_readmem,               METH_VARARGS, efi_readmem__doc__},
+    {"readmem_dword",       posix_readmem_dword,         METH_VARARGS, efi_readmem_dword__doc__},
+    {"writemem",            posix_writemem,              METH_VARARGS, efi_writemem__doc__},
+    {"writemem_dword",      posix_writemem_dword,        METH_VARARGS, efi_writemem_dword__doc__},
+    {"writeio",             edk2_writeio,               METH_VARARGS, efi_writeio__doc__},
+    {"readio",              edk2_readio,                METH_VARARGS, efi_readio__doc__},
+    {"swsmi",               posix_swsmi,                 METH_VARARGS, efi_swsmi__doc__},
+    {"allocphysmem",        posix_allocphysmem,          METH_VARARGS, efi_allocphysmem__doc__},
+    {"cpuid",               edk2_cpuid,                 METH_VARARGS, efi_cpuid__doc__},
+    {"GetVariable",         MiscRT_GetVariable,          METH_VARARGS, MiscRT_GetVariable__doc__},
+    {"GetNextVariableName", MiscRT_GetNextVariableName,  METH_VARARGS, MiscRT_GetNextVariableName__doc__},
+    {"SetVariable",         MiscRT_SetVariable,          METH_VARARGS, MiscRT_SetVariable__doc__},
     {NULL,              NULL}            /* Sentinel */
 };
 
