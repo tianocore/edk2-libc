@@ -3900,10 +3900,10 @@ Read the CPUID.";);
 static PyObject *
 edk2_cpuid(PyObject *self, PyObject *args)
 {
-	UINT32 eax, ecx, rax_value, rbx_value, rcx_value, rdx_value;
+    UINT32 eax, ecx, rax_value, rbx_value, rcx_value, rdx_value;
     if (!PyArg_ParseTuple(args, "II", &eax, &ecx))
       return NULL;
-	Py_BEGIN_ALLOW_THREADS
+    Py_BEGIN_ALLOW_THREADS
     AsmCpuidEx( eax, ecx, &rax_value, &rbx_value, &rcx_value, &rdx_value);
     Py_END_ALLOW_THREADS
     return Py_BuildValue("(IIII))",  (unsigned long)rax_value,  (unsigned long)rbx_value,  (unsigned long)rcx_value,  (unsigned long)rdx_value);
@@ -3916,12 +3916,12 @@ Use malloc to allocate space in memory.";);
 static PyObject *
 posix_allocphysmem(PyObject *self, PyObject *args)
 {
-	unsigned int length, max_pa;
+    unsigned int length, max_pa;
     void *va;
     if (!PyArg_ParseTuple(args, "II", &length, &max_pa))
       return NULL;
-      
-	Py_BEGIN_ALLOW_THREADS
+
+    Py_BEGIN_ALLOW_THREADS
     va = malloc(length);
     Py_END_ALLOW_THREADS
 
@@ -4052,7 +4052,7 @@ posix_readmem(PyObject *self, PyObject *args)
   }
 
   Py_END_ALLOW_THREADS
-  
+
   data = Py_BuildValue("y#", buffer, len);
   free(buffer);
 
@@ -4196,7 +4196,7 @@ MiscRT_GetNextVariableName(PyObject *self, PyObject *args)
   UINT32        GuidSize, VariableNameSize, i;
   EFI_GUID      VendorGuid;
   EFI_STATUS    Status;
-  const char   *GuidIn; 
+  const char   *GuidIn;
   char         *VendorGuidPtr, *GuidOut[37];
 
   if(!PyArg_ParseTuple(args, "Ky#s#", &NameSize, &NameIn, &VariableNameSize, &GuidIn, &GuidSize))
@@ -4259,14 +4259,14 @@ MiscRT_SetVariable(PyObject *self, PyObject *args)
 
 /**
   This function prints a GUID to a buffer
-  
+
   @param guid                    Pointer to a GUID
-  
+
   @param str_buffer              Pointer to a str buffer
-  
+
 
   @retval EFI_SUCCESS            GUID was printed
-  
+
   @retval EFI_INVALID_PARAMETER  GUID was NULL
 
 **/

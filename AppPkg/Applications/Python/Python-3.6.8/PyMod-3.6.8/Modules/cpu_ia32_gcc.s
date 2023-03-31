@@ -24,13 +24,13 @@
 #------------------------------------------------------------------------------
 #  void
 #  _swsmi (
-#    unsigned int	smi_code_data	// rcx
-#    IN   UINT32	rax_value	// rdx
-#    IN   UINT32	rbx_value	// r8
-#    IN   UINT32	rcx_value	// r9
-#    IN   UINT32	rdx_value	// r10
-#    IN   UINT32	rsi_value	// r11
-#    IN   UINT32	rdi_value	// r12
+#    unsigned int    smi_code_data    // rcx
+#    IN   UINT32    rax_value    // rdx
+#    IN   UINT32    rbx_value    // r8
+#    IN   UINT32    rcx_value    // r9
+#    IN   UINT32    rdx_value    // r10
+#    IN   UINT32    rsi_value    // r11
+#    IN   UINT32    rdi_value    // r12
 #    )
 #------------------------------------------------------------------------------
 _swsmi:
