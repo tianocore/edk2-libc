@@ -3839,8 +3839,16 @@ void WritePCICfg(
 }
 
 PyDoc_STRVAR(efi_rdmsr__doc__,
-"rdmsr(ecx) -> (eax,edx)\n\
-Read the given MSR.");
+"rdmsr(msr) -> (lower_32bits, higher_32bits)\n\
+\n\
+Read the given msr and return the data as tuple.\n\
+\n\
+Parameters:\n\
+    msr - The msr in hex or int format\n\
+\n\
+Return Value:\n\
+    a tuple with lower and higher 32 bit values read from the msr\n\
+");
 
 static PyObject *
 edk2_rdmsr(PyObject *self, PyObject *args)
@@ -3858,8 +3866,18 @@ edk2_rdmsr(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(efi_wrmsr__doc__,
-"wrmsr(ecx, eax, edx) -> None\n\
-Write edx:eax to the given MSR.");
+"wrmsr(msr, lower_32bits, higher_32bits) -> None\n\
+\n\
+Writes higher_32bits:lower_32bits to the given msr.\n\
+\n\
+Parameters:\n\
+    msr - The msr in hex or int format\n\
+    lower_32bits - The lower 32 bit data for the msr\n\
+    higher_32bits - The higher 32 bit data for the msr\n\
+\n\
+Return Value:\n\
+    None\n\
+");
 
 static PyObject *
 edk2_wrmsr(PyObject *self, PyObject *args)
