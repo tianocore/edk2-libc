@@ -670,6 +670,7 @@ da_ShellRename(
         free(NewFileInfo);
         if(Status == EFI_SUCCESS) {
           // File has been successfully renamed.  We are DONE!
+          close(OldFd);
           return 0;
         }
         errno = EFI2errno( Status );
@@ -688,6 +689,7 @@ da_ShellRename(
     else {
       errno = ENOMEM;
     }
+    close(OldFd);
   }
   return -1;
 }
