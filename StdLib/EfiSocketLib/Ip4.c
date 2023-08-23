@@ -588,7 +588,7 @@ EslIp4RemoteAddressSet (
   @param [in] pIo       The address of an ::ESL_IO_MGMT structure
 
 **/
-EFIAPI VOID
+VOID EFIAPI
 EslIp4RxComplete (
   IN EFI_EVENT Event,
   IN VOID *context
@@ -1118,7 +1118,7 @@ EslIp4TxBuffer (
   @param [in] pIo       The address of an ::ESL_IO_MGMT structure
 
 **/
-EFIAPI VOID
+VOID EFIAPI
 EslIp4TxComplete (
   IN EFI_EVENT Event,
   IN VOID *context

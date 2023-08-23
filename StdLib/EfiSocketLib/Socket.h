@@ -1433,7 +1433,7 @@ EslSocketPortClose (
   @param [in] pPort     Address of an ::ESL_PORT structure.
 
 **/
-EFIAPI VOID
+VOID EFIAPI
 EslSocketPortCloseComplete (
   IN EFI_EVENT Event,
   IN VOID *context

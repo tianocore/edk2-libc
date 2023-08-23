@@ -68,7 +68,7 @@ EslTcp4ConnectStart (
   @param [in] pPort     Address of an ::ESL_PORT structure.
 
 **/
-EFIAPI VOID
+VOID EFIAPI
 EslTcp4ListenComplete (
   IN EFI_EVENT Event,
   IN VOID *contet
@@ -185,7 +185,7 @@ EslTcp4Accept (
   @param [in] pPort     Address of an ::ESL_PORT structure.
 
 **/
-EFIAPI VOID
+VOID EFIAPI
 EslTcp4ConnectComplete (
   IN EFI_EVENT Event,
   IN VOID *context
@@ -826,7 +826,7 @@ EslTcp4Listen (
   @param [in] pPort     Address of an ::ESL_PORT structure.
 
 **/
-EFIAPI VOID
+VOID EFIAPI
 EslTcp4ListenComplete (
   IN EFI_EVENT Event,
   IN VOID *context
@@ -1734,7 +1734,7 @@ EslTcp4RemoteAddressSet (
   @param [in] pIo       Address of an ::ESL_IO_MGMT structure
 
 **/
-EFIAPI VOID
+VOID EFIAPI
 EslTcp4RxComplete (
   IN EFI_EVENT Event,
   IN VOID *context
@@ -2124,7 +2124,7 @@ EslTcp4TxBuffer (
   @param [in] pIo       The ESL_IO_MGMT structure address
 
 **/
-EFIAPI VOID
+VOID EFIAPI
 EslTcp4TxComplete (
   IN EFI_EVENT Event,
   IN VOID *context
@@ -2182,7 +2182,7 @@ EslTcp4TxComplete (
   @param [in] pIo       The ESL_IO_MGMT structure address
 
 **/
-EFIAPI VOID
+VOID EFIAPI
 EslTcp4TxOobComplete (
   IN EFI_EVENT Event,
   IN VOID *context
