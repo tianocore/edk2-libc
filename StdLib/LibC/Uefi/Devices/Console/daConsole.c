@@ -142,11 +142,15 @@ da_ConSeek(
     return -1;
   }
 
-  if(Position == 0 && whence == SEEK_CUR)
-     return Position;
+  Proto = (EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *)Stream->Dev;
+  
+  if(Position == 0 && whence == SEEK_CUR) {
+    CursorPos.XYpos.Column  = (UINT32)Proto->Mode->CursorColumn;
+    CursorPos.XYpos.Row     = (UINT32)Proto->Mode->CursorRow;
+    return CursorPos.Offset;
+  }
   
   // Everything is OK to do the final verification and "seek".
-  Proto = (EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *)Stream->Dev;
   CursorPos.Offset = Position;
 
   EFIerrno = Proto->SetCursorPosition(Proto,
