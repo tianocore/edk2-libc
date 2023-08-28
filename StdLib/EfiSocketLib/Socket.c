@@ -3970,14 +3970,15 @@ EslSocketPortClose (
   @param[in]  Event     The close completion event
   @param[in]  pPort     Address of an ::ESL_PORT structure.
 **/
-VOID
+VOID EFIAPI
 EslSocketPortCloseComplete (
   IN EFI_EVENT Event,
-  IN ESL_PORT * pPort
+  IN VOID *context
   )
 {
   ESL_IO_MGMT * pIo;
   EFI_STATUS Status;
+  ESL_PORT * pPort = (ESL_PORT*) context;
 
   DBG_ENTER ( );
   VERIFY_AT_TPL ( TPL_SOCKETS );

@@ -588,16 +588,17 @@ EslIp4RemoteAddressSet (
   @param [in] pIo       The address of an ::ESL_IO_MGMT structure
 
 **/
-VOID
+VOID EFIAPI
 EslIp4RxComplete (
   IN EFI_EVENT Event,
-  IN ESL_IO_MGMT * pIo
+  IN VOID *context
   )
 {
   size_t LengthInBytes;
   ESL_PACKET * pPacket;
   EFI_IP4_RECEIVE_DATA * pRxData;
   EFI_STATUS Status;
+  ESL_IO_MGMT * pIo = (ESL_IO_MGMT *)context;
 
   DBG_ENTER ( );
 
@@ -1117,10 +1118,10 @@ EslIp4TxBuffer (
   @param [in] pIo       The address of an ::ESL_IO_MGMT structure
 
 **/
-VOID
+VOID EFIAPI
 EslIp4TxComplete (
   IN EFI_EVENT Event,
-  IN ESL_IO_MGMT * pIo
+  IN VOID *context
   )
 {
   UINT32 LengthInBytes;
@@ -1128,6 +1129,7 @@ EslIp4TxComplete (
   ESL_PACKET * pPacket;
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
+  ESL_IO_MGMT * pIo = (ESL_IO_MGMT*)context;
 
   DBG_ENTER ( );
 
@@ -1341,6 +1343,7 @@ CONST ESL_PROTOCOL_API cEslIp4Api = {
   OFFSET_OF ( ESL_PORT, Context.Ip4.ModeData.ConfigData ),
   OFFSET_OF ( ESL_LAYER, pIp4List ),
   OFFSET_OF ( struct sockaddr_in, sin_zero ),
+
   sizeof ( struct sockaddr_in ),
   AF_INET,
   sizeof (((ESL_PACKET *)0 )->Op.Ip4Rx ),
