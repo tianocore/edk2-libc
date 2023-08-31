@@ -66,7 +66,7 @@
 #undef HAVE_ACOSH
 
 /* struct addrinfo (netdb.h) */
-#undef HAVE_ADDRINFO
+#define HAVE_ADDRINFO   1
 
 /* Define to 1 if you have the 'alarm' function. */
 #undef HAVE_ALARM
@@ -683,7 +683,7 @@
 #undef HAVE_SOCKADDR_SA_LEN
 
 /* struct sockaddr_storage (sys/socket.h) */
-#undef HAVE_SOCKADDR_STORAGE
+#define HAVE_SOCKADDR_STORAGE   1
 
 /* Define if you have the 'socketpair' function. */
 #undef HAVE_SOCKETPAIR
