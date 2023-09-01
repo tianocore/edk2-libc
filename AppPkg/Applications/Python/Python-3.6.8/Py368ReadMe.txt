@@ -129,13 +129,14 @@ system as follows:
 
 6. Example: Enabling socket support
 ===================================
-  1.  enable {"_socket", init_socket}, in PyMod-3.6.8\Modules\config.c
-  2.  enable LibraryClasses BsdSocketLib and EfiSocketLib in Python368.inf
-  3.  Build Python interpreter application using below command
+  1. Uncomment the statement // {"_socket", init_socket}, in PyMod-3.6.8\Modules\config.c
+  2. Uncomment BsdSocketLib and EfiSocketLib LibraryClasses in Python368.inf
+  3. Uncomment the statement #Modules/socketmodule.c in Python368.inf
+  4. Build Python interpreter application using below command
           build -a X64 -p AppPkg\AppPkg.dsc
-  6.  copy Build\AppPkg\RELEASE_VS2017\X64\Python.efi to \Efi\Tools on your
-      target system. Replace "RELEASE_VS2017", in the source path, with
-      values appropriate for your tool chain.
+  5. Copy Build\AppPkg\RELEASE_VS2017\X64\Python.efi to \Efi\Tools on your
+     target system. Replace "RELEASE_VS2017", in the source path, with
+     values appropriate for your tool chain.
 
 7. Running Python
 =================
