@@ -34,7 +34,7 @@
 **/
 char *
 realpath(
-  char *file_name,
+  const char *file_name,
   char *resolved_name
   )
 {
