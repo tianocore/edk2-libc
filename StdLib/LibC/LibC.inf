@@ -34,6 +34,7 @@
   Main/isnand_ieee754.c
   Main/isnanf_ieee754.c
   Main/infinityf_ieee754.c
+  Main/nanf_ieee754.c
   Main/Main.c
   Main/HtoNtoH.c
   Main/ByteSwap.c
