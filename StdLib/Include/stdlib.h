@@ -74,7 +74,7 @@
                            const wchar_t * __restrict src, size_t limit);
 
     ################  Miscelaneous functions for *nix compatibility
-    char       *realpath    (char *file_name, char *resolved_name);
+    char       *realpath    (const char *file_name, char *resolved_name);
     const char *getprogname (void);
     void        setprogname (const char *progname);
 
@@ -875,7 +875,7 @@ size_t  wcstombs(char * __restrict Dest, const wchar_t * __restrict Src, size_t 
     @retval NULL                    An error occured.
     @retval resolved_name.
 **/
-char * realpath(char *file_name, char *resolved_name);
+char * realpath(const char *file_name, char *resolved_name);
 
 /** The getprogname() function returns the name of the program.  If the name
     has not been set yet, it will return NULL.
