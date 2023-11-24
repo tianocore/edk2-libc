@@ -93,7 +93,7 @@ struct lconv {
                                                   the international currency symbol from the monetary quantity. */
   char  *currency_symbol;         /**< ""         The local currency symbol for the current locale. */
   char  *mon_decimal_point;       /**< ""         The decimal point used for monetary values. */
-  char  *mon_thousands_sep;       /**< ""         The separator for digit groups preceeding the decimal-point. */
+  char  *mon_thousands_sep;       /**< ""         The separator for digit groups preceding the decimal-point. */
   char  *mon_grouping;            /**< ""         A string, like grouping, for monetary values. */
   char  *positive_sign;           /**< ""         A string to indicate a non-negative monetary value. */
   char  *negative_sign;           /**< ""         A string to indicate a negative monetary value. */

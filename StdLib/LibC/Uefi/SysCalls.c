@@ -910,7 +910,7 @@ poll (
     @param[in]  To      The new name of From.
 
     @retval   0     Successful completion.
-    @retval   -1    An error has occured and errno has been set to further specify the error.
+    @retval   -1    An error has occurred and errno has been set to further specify the error.
                     Neither the file named by From nor the file named by To are
                     changed or created.
                       - ENXIO: Path specified is not supported by any loaded driver.
@@ -951,7 +951,7 @@ rename(
     @param[in]  path    Path to the directory to delete.
 
     @retval   -1    The directory couldn't be opened (doesn't exist).
-    @retval   -1    The directory wasn't empty or an IO error occured.
+    @retval   -1    The directory wasn't empty or an IO error occurred.
 **/
 int
 rmdir(
@@ -1072,7 +1072,7 @@ lstat (const char *path, struct stat *statbuf)
     @param[in,out]    ...       Zero or more parameters as required for request.
 
     @retval   >=0   The operation completed successfully.
-    @retval   -1    An error occured.  More information is in errno.
+    @retval   -1    An error occurred.  More information is in errno.
 **/
 int
 ioctl(
@@ -1441,7 +1441,7 @@ va_Utimes(
     @param[in]  times   Pointer to an array of two timeval structures
 
     @retval   0     File times successfully set.
-    @retval   -1    An error occured.  Error type in errno.
+    @retval   -1    An error occurred.  Error type in errno.
 **/
 int
 utimes(

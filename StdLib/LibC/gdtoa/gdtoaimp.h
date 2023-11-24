@@ -1,5 +1,5 @@
 /** @file
-  This is a variation on dtoa.c that converts arbitary binary
+  This is a variation on dtoa.c that converts arbitrary binary
   floating-point formats to and from decimal notation.  It uses
   double-precision arithmetic internally, so there are still
   various #ifdefs that adapt the calculations to the native
