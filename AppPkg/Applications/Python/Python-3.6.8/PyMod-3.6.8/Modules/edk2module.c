@@ -3985,9 +3985,9 @@ edk2_writeio(PyObject *self, PyObject *args)
 
   Py_BEGIN_ALLOW_THREADS
   addrs = (short)(addr & 0xffff);
-  if (1 == sz) IoWrite8((unsigned char)(value & 0xFF), addrs);
-  else if (2 == sz) IoWrite16((unsigned short)(value & 0xFFFF), addrs);
-  else if (4 == sz) IoWrite32(value, addrs);
+  if (1 == sz) IoWrite8(addrs, (unsigned char)(value & 0xFF));
+  else if (2 == sz) IoWrite16(addrs, (unsigned short)(value & 0xFFFF));
+  else if (4 == sz) IoWrite32(addrs, value);
   Py_END_ALLOW_THREADS
 
   Py_INCREF(Py_None);
