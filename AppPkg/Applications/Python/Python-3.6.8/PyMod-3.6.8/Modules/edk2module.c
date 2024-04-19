@@ -3886,7 +3886,7 @@ edk2_wrmsr(PyObject *self, PyObject *args)
   UINT64       data = 0;
   if (!PyArg_ParseTuple(args, "III", &vecx, &veax, &vedx))
     return NULL;
-  data = vedx << 32 | veax;
+  data = LShiftU64(vedx, 32) | veax;
   Py_BEGIN_ALLOW_THREADS
   AsmWriteMsr64(vecx, data);
   Py_END_ALLOW_THREADS
