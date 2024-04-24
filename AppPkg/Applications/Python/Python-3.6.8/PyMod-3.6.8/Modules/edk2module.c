@@ -3,7 +3,7 @@
     Derived from posixmodule.c in Python 2.7.2.
 
     Copyright (c) 2015, Daryl McDaniel. All rights reserved.<BR>
-    Copyright (c) 2011 - 2023, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2011 - 2024, Intel Corporation. All rights reserved.<BR>
     This program and the accompanying materials are licensed and made available under
     the terms and conditions of the BSD License that accompanies this distribution.
     The full text of the license may be found at
@@ -22,16 +22,30 @@
 #include  <wchar.h>
 #include  <sys/syslimits.h>
 #include  <Uefi.h>
+#include  <Pi/PiDxeCis.h>      // Needed for the definition of EFI_AP_PROCEDURE
 #include  <Library/UefiLib.h>
 #include  <Library/PciLib.h>
 #include  <Library/IoLib.h>
 #include  <Library/UefiRuntimeServicesTableLib.h>
+#include  <Library/UefiBootServicesTableLib.h>
+#include  <Protocol/MpService.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 PyTypeObject EfiGuidType;
+EFI_MP_SERVICES_PROTOCOL   *gpMpService = NULL;
+UINTN                       gCurrentBSPProcessorNumber = 0;
+UINTN                       gNumberOfProcessors = 0;
+UINTN                       gNumberOfEnabledProcessors = 0;
+
+typedef struct {
+    UINT32 msr;  // msr value
+    UINT64 data; // data, to be filled by the AP function
+} AP_FUNCTION_MSR_ARGS;
+
+#define AP_FUNCTION_EXECUTION_TIMEOUT  5000000   // setting the max time out value to be 5 seconds
 
 extern void _swsmi( unsigned int smi_code_data, unsigned int rax_value, unsigned int rbx_value, unsigned int rcx_value, unsigned int rdx_value, unsigned int rsi_value, unsigned int rdi_value );
 // -- Support routines
@@ -168,6 +182,46 @@ PyDoc_STRVAR(edk2__doc__,
 
 /* dummy version. _PyVerify_fd() is already defined in fileobject.h */
 #define _PyVerify_fd_dup2(A, B) (1)
+
+/* MPServices Protocol wrapper function definitions */
+static EFI_STATUS
+MpServicesWhoAmI (
+  IN EFI_MP_SERVICES_PROTOCOL  *pMpService,
+  OUT UINTN                    *pProcessorNumber
+  )
+{
+  return pMpService->WhoAmI (pMpService, pProcessorNumber);
+}
+
+static EFI_STATUS
+MpServicesGetNumberOfProcessors (
+  IN EFI_MP_SERVICES_PROTOCOL  *pMpService,
+  OUT UINTN                    *pNumberOfProcessors,
+  OUT UINTN                    *pNumberOfEnabledProcessors
+
+  )
+{
+  return pMpService->GetNumberOfProcessors (pMpService,
+                                            pNumberOfProcessors,
+                                            pNumberOfEnabledProcessors);
+}
+
+// MSR read function to run on specific cpu core using MPServices Protocol
+VOID EFIAPI MSRReadToRunOnAP(IN VOID *context)
+{
+    AP_FUNCTION_MSR_ARGS *args = (AP_FUNCTION_MSR_ARGS *)context;
+    UINT32 msr = args->msr;
+    args->data = AsmReadMsr64(msr);
+}
+
+// MSR write function to run on specific cpu core using MPServices Protocol
+VOID EFIAPI MSRWriteToRunOnAP(IN VOID *context)
+{
+    AP_FUNCTION_MSR_ARGS *args = (AP_FUNCTION_MSR_ARGS *)context;
+    UINT32 msr = args->msr;
+    UINT64 data = args->data;
+    AsmWriteMsr64(msr, data);
+}
 
 #ifndef UEFI_C_SOURCE
 /* Return a dictionary corresponding to the POSIX environment table */
@@ -3865,6 +3919,91 @@ edk2_rdmsr(PyObject *self, PyObject *args)
   return Py_BuildValue("(II)", (unsigned long)veax, (unsigned long)vedx);
 }
 
+PyDoc_STRVAR(efi_rdmsr_ex__doc__,
+"rdmsr_ex(cpu, msr) -> (lower_32bits, higher_32bits)\n\
+\n\
+Read the given msr from the specific cpu and return the data as tuple,\n\
+provided the cpu number is less than the max number of processors on\n\
+this system, otherwise generates OSError/ValueError to indicate API failure.\n\
+\n\
+Parameters:\n\
+    cpu - The cpu number in hex or int format\n\
+    msr - The msr in hex or int format\n\
+\n\
+Return Value:\n\
+    a tuple with lower and higher 32 bit values read from the msr\n\
+");
+
+static PyObject *
+edk2_rdmsr_ex(PyObject *self, PyObject *args)
+{
+    unsigned int cpu, msr, veax, vedx;
+    EFI_STATUS status = 0;
+    UINT64   data = 0;
+    BOOLEAN is_function_finished = FALSE;
+    AP_FUNCTION_MSR_ARGS ap_function_args = {0};
+
+    if (!PyArg_ParseTuple(args, "II", &cpu, &msr))
+        return NULL;
+    ap_function_args.msr = msr;
+
+    Py_BEGIN_ALLOW_THREADS
+    if (cpu == gCurrentBSPProcessorNumber)
+    {
+        // cpu provided as input is same as the current BSP processor
+        // then directly call the AsmReadMsr64 function to read msr
+        // on current BSP processor itself.
+        data = AsmReadMsr64(msr);
+    }
+    else if (cpu < gNumberOfProcessors)
+    {
+        // if cpu provided as input is different from the current
+        // BSP processor and is less than the number of processors
+        // on this system, then make use of the MPService protocols
+        // StartupThisAP function to run the MSR read function on
+        // specific AP indicated by cpu parameter.
+        // Start the AP with the arguments structure
+        status = gpMpService->StartupThisAP(
+            gpMpService,
+            MSRReadToRunOnAP,               // Function to run
+            cpu,                            // AP number
+            NULL,                           // WaitEvent (optional)
+            AP_FUNCTION_EXECUTION_TIMEOUT,  // Timeout in microseconds
+            &ap_function_args,              // Buffer to pass to the function
+            &is_function_finished           // Finished (optional)
+        );
+
+        if (EFI_ERROR(status))
+        {
+            PyErr_SetString(PyExc_OSError, "Could not start the requested cpu");
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+
+        if (!is_function_finished)
+        {
+            PyErr_SetString(PyExc_OSError,
+                            "Timeout while running the msr read function on given cpu");
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+        data = ap_function_args.data;
+    }
+    else
+    {
+        // if cpu provided exeeds the number of processors
+        // then set the ValueError exception and return Py_None
+        PyErr_SetString(PyExc_ValueError,
+                        "Invalid cpu number provided");
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    Py_END_ALLOW_THREADS
+    veax = (UINT32)data;
+    vedx = (UINT64)data >> 32;
+    return Py_BuildValue("(II)", (unsigned long)veax, (unsigned long)vedx);
+}
+
 PyDoc_STRVAR(efi_wrmsr__doc__,
 "wrmsr(msr, lower_32bits, higher_32bits) -> None\n\
 \n\
@@ -3892,6 +4031,93 @@ edk2_wrmsr(PyObject *self, PyObject *args)
   Py_END_ALLOW_THREADS
   Py_INCREF(Py_None);
   return Py_None;
+}
+
+PyDoc_STRVAR(efi_wrmsr_ex__doc__,
+"wrmsr_ex(cpu, msr, lower_32bits, higher_32bits) -> None\n\
+\n\
+Writes higher_32bits:lower_32bits to the given msr,\n\
+provided the cpu input is less than the max number of\n\
+processors on this system, otherwise generates\n\
+OSError/ValueError to indicate API failure.\n\
+\n\
+Parameters:\n\
+    cpu - The cpu number in hex or int format\n\
+    msr - The msr in hex or int format\n\
+    lower_32bits - The lower 32 bit data for the msr\n\
+    higher_32bits - The higher 32 bit data for the msr\n\
+\n\
+Return Value:\n\
+    None\n\
+");
+
+static PyObject *
+edk2_wrmsr_ex(PyObject *self, PyObject *args)
+{
+    unsigned int cpu, msr, veax, vedx;
+    EFI_STATUS status = 0;
+    UINT64   data = 0;
+    BOOLEAN is_function_finished = FALSE;
+    AP_FUNCTION_MSR_ARGS ap_function_args = {0};
+
+    if (!PyArg_ParseTuple(args, "IIII", &cpu, &msr, &veax, &vedx))
+        return NULL;
+    data = LShiftU64(vedx, 32) | veax;
+    ap_function_args.msr = msr;
+    ap_function_args.data = data;
+
+    Py_BEGIN_ALLOW_THREADS
+    if (cpu == gCurrentBSPProcessorNumber)
+    {
+        // cpu provided as input is same as the current BSP processor
+        // then directly call the AsmWriteMsr64 function to write msr
+        // on current BSP processor itself.
+        AsmWriteMsr64(msr, data);
+    }
+    else if (cpu < gNumberOfProcessors)
+    {
+        // if cpu provided as input is different from the current
+        // BSP processor, then make use of the MPService protocols
+        // StartupThisAP function to run the MSR write function on
+        // specific AP indicated by cpu parameter.
+        // Start the AP with the arguments structure
+        status = gpMpService->StartupThisAP(
+            gpMpService,
+            MSRWriteToRunOnAP,              // Function to run
+            cpu,                            // AP number
+            NULL,                           // WaitEvent (optional)
+            AP_FUNCTION_EXECUTION_TIMEOUT,  // Timeout in microseconds
+            &ap_function_args,              // Buffer to pass to the function
+            &is_function_finished           // Finished (optional)
+        );
+
+        if (EFI_ERROR(status))
+        {
+            PyErr_SetString(PyExc_OSError, "Could not start the requested cpu");
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+
+        if (!is_function_finished)
+        {
+            PyErr_SetString(PyExc_OSError,
+                            "Timeout while running the msr write function on given cpu");
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+    }
+    else
+    {
+        // if cpu provided exeeds the number of processors
+        // then set the ValueError exception and return Py_None
+        PyErr_SetString(PyExc_ValueError,
+                        "Invalid cpu number provided");
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    Py_END_ALLOW_THREADS
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyDoc_STRVAR(efi_swsmi__doc__,
@@ -4576,7 +4802,9 @@ static PyMethodDef edk2_methods[] = {
 #endif
     {"abort",               edk2_abort,      METH_NOARGS,  edk2_abort__doc__},
     {"rdmsr",               edk2_rdmsr,                 METH_VARARGS, efi_rdmsr__doc__},
+    {"rdmsr_ex",            edk2_rdmsr_ex,              METH_VARARGS, efi_rdmsr_ex__doc__},
     {"wrmsr",               edk2_wrmsr,                 METH_VARARGS, efi_wrmsr__doc__},
+    {"wrmsr_ex",            edk2_wrmsr_ex,              METH_VARARGS, efi_wrmsr_ex__doc__},
     {"readpci",             edk2_readpci,               METH_VARARGS, efi_readpci__doc__},
     {"writepci",            edk2_writepci,              METH_VARARGS, efi_writepci__doc__},
     {"readmem",             posix_readmem,               METH_VARARGS, efi_readmem__doc__},
@@ -4814,12 +5042,27 @@ PyMODINIT_FUNC
 PyEdk2__Init(void)
 {
     PyObject *m;
+    EFI_STATUS   Status = 0;
 
 #ifndef UEFI_C_SOURCE
   PyObject *v;
 #endif
+    Status = gBS->LocateProtocol(&gEfiMpServiceProtocolGuid,
+                                 NULL,
+                                 &gpMpService);
+    if (EFI_ERROR(Status))
+    {
+        Print(L"Unable to locate the Protocol MpServices protocol: %r\n", Status);
+        return NULL;
+    }
+    // Get the current BSP processor number
+    MpServicesWhoAmI(gpMpService, &gCurrentBSPProcessorNumber);
+    // Get the number of processors
+    MpServicesGetNumberOfProcessors(gpMpService,
+                                    &gNumberOfProcessors,
+                                    &gNumberOfEnabledProcessors);
 
-	m = PyModule_Create(&edk2module);
+    m = PyModule_Create(&edk2module);
     if (m == NULL)
         return m;
 
@@ -4870,12 +5113,9 @@ PyEdk2__Init(void)
     //PyModule_AddObject(m, "statvfs_result",
     //                   (PyObject*) &StatVFSResultType);
     initialized = 1;
-	return m;
-
+    return m;
 }
 
 #ifdef __cplusplus
 }
 #endif
-
-

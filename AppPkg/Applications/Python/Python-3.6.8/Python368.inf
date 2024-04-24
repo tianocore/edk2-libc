@@ -46,6 +46,9 @@
   #BsdSocketLib
   #EfiSocketLib
 
+[Protocols]
+  gEfiMpServiceProtocolGuid           ## CONSUMES
+
 [FixedPcd]
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x0F
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000040
