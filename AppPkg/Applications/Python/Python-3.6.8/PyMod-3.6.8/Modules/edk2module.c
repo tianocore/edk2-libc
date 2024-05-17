@@ -45,6 +45,15 @@ typedef struct {
     UINT64 data; // data, to be filled by the AP function
 } AP_FUNCTION_MSR_ARGS;
 
+typedef struct {
+    UINT32 eax;         // eax value
+    UINT32 ecx;         // ecx value
+    UINT32 rax_value;   // retrun value for eax
+    UINT32 rbx_value;   // return value for ebx
+    UINT32 rcx_value;   // retrun value for ecx
+    UINT32 rdx_value;   // return value for edx
+} AP_FUNCTION_CPUID_ARGS;
+
 #define AP_FUNCTION_EXECUTION_TIMEOUT  5000000   // setting the max time out value to be 5 seconds
 
 extern void _swsmi( unsigned int smi_code_data, unsigned int rax_value, unsigned int rbx_value, unsigned int rcx_value, unsigned int rdx_value, unsigned int rsi_value, unsigned int rdi_value );
@@ -221,6 +230,13 @@ VOID EFIAPI MSRWriteToRunOnAP(IN VOID *context)
     UINT32 msr = args->msr;
     UINT64 data = args->data;
     AsmWriteMsr64(msr, data);
+}
+
+// CPUID execution function to run on specific cpu core using MPServices Protocol
+VOID EFIAPI CPUIDToRunOnAP(IN VOID *context)
+{
+    AP_FUNCTION_CPUID_ARGS *args = (AP_FUNCTION_CPUID_ARGS *)context;
+    AsmCpuidEx( args->eax, args->ecx, &args->rax_value, &args->rbx_value, &args->rcx_value, &args->rdx_value);
 }
 
 #ifndef UEFI_C_SOURCE
@@ -4153,6 +4169,82 @@ edk2_cpuid(PyObject *self, PyObject *args)
     return Py_BuildValue("(IIII))",  (unsigned long)rax_value,  (unsigned long)rbx_value,  (unsigned long)rcx_value,  (unsigned long)rdx_value);
 }
 
+PyDoc_STRVAR(efi_cpuid_ex__doc__,
+"cpuid_ex(cpu, eax, ecx) -> (eax:ebx:ecx:edx)\n\
+Read the CPUID from a specific cpu.";);
+
+static PyObject *
+edk2_cpuid_ex(PyObject *self, PyObject *args)
+{
+    UINT32 cpu, eax, ecx, rax_value, rbx_value, rcx_value, rdx_value;
+    BOOLEAN is_function_finished = FALSE;
+    EFI_STATUS status = 0;
+    AP_FUNCTION_CPUID_ARGS cpuid_args = {0};
+
+    if (!PyArg_ParseTuple(args, "III", &cpu, &eax, &ecx))
+        return NULL;
+    Py_BEGIN_ALLOW_THREADS
+
+    cpuid_args.eax = eax;
+    cpuid_args.ecx = ecx;
+
+    if (cpu == gCurrentBSPProcessorNumber)
+    {
+        // cpu provided as input is same as the current BSP processor
+        // then directly call the CPUIDToRunOnAP function to execute
+        // cpuid instruction on current BSP processor itself.
+        CPUIDToRunOnAP(&cpuid_args);
+    }
+    else if (cpu < gNumberOfProcessors)
+    {
+        // if cpu provided as input is different from the current
+        // BSP processor and is less than the number of processors
+        // on this system, then make use of the MPService protocols
+        // StartupThisAP function to run the CPUIDToRunOnAP function on
+        // specific AP indicated by cpu parameter.
+        // Start the AP with the arguments structure
+
+        status = gpMpService->StartupThisAP(
+            gpMpService,
+            CPUIDToRunOnAP,                 // Function to run
+            cpu,                            // AP number
+            NULL,                           // WaitEvent (optional)
+            AP_FUNCTION_EXECUTION_TIMEOUT,  // Timeout in microseconds
+            &cpuid_args,                    // Buffer to pass to the function
+            &is_function_finished           // Finished (optional)
+        );
+        if (EFI_ERROR(status))
+        {
+            PyErr_SetString(PyExc_OSError, "Could not start the requested cpu");
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+
+        if (!is_function_finished)
+        {
+            PyErr_SetString(PyExc_OSError,
+                            "Timeout while running the cpuid instruction on given cpu");
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+    }
+    else
+    {
+        // if cpu provided exeeds the number of processors
+        // then set the ValueError exception and return Py_None
+        PyErr_SetString(PyExc_ValueError,
+                        "Invalid cpu number provided");
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    Py_END_ALLOW_THREADS
+    return Py_BuildValue("(IIII))", (unsigned long)cpuid_args.rax_value,
+                                    (unsigned long)cpuid_args.rbx_value,
+                                    (unsigned long)cpuid_args.rcx_value,
+                                    (unsigned long)cpuid_args.rdx_value);
+}
+
 PyDoc_STRVAR(efi_allocphysmem__doc__,
 "allocphysmem(length, max_pa) -> (va)\n\
 Use malloc to allocate space in memory.";);
@@ -4816,6 +4908,7 @@ static PyMethodDef edk2_methods[] = {
     {"swsmi",               posix_swsmi,                 METH_VARARGS, efi_swsmi__doc__},
     {"allocphysmem",        posix_allocphysmem,          METH_VARARGS, efi_allocphysmem__doc__},
     {"cpuid",               edk2_cpuid,                 METH_VARARGS, efi_cpuid__doc__},
+    {"cpuid_ex",            edk2_cpuid_ex,              METH_VARARGS, efi_cpuid_ex__doc__},
     {"GetVariable",         MiscRT_GetVariable,          METH_VARARGS, MiscRT_GetVariable__doc__},
     {"GetNextVariableName", MiscRT_GetNextVariableName,  METH_VARARGS, MiscRT_GetNextVariableName__doc__},
     {"SetVariable",         MiscRT_SetVariable,          METH_VARARGS, MiscRT_SetVariable__doc__},
