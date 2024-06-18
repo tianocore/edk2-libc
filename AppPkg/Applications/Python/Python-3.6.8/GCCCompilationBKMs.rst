@@ -150,17 +150,15 @@ Copy the contents of edk2-libc to edk2 folder::
 
 2.5.  Build Python Interpreter using GCC
 ----------------------------------------
-Uncomment the line containing following inf file name in AppPkg/AppPkg.dsc file
-AppPkg/Applications/Python/Python-3.6.8/Python368.inf
 
 Execute the below command to build the X64 version of the Python 3.6.8 interpreter using GCC tool chain::
 
         bash$ cd AppPkg/Applications/Python/Python-3.6.8/
         bash$ python srcprep.py
         bash$ cd ~/src/edk2
-        bash$ build -a X64 -b RELEASE -p AppPkg/AppPkg.dsc -m AppPkg/Applications/Python/Python-3.6.8/Python368.inf
+        bash$ build -a X64 -b RELEASE -p AppPkg/AppPkg.dsc -m AppPkg/Applications/Python/Python-3.6.8/Python368.inf -D BUILD_PYTHON368
              or
-        bash$ build -a X64 -b RELEASE -p AppPkg/AppPkg.dsc
+        bash$ build -a X64 -b RELEASE -p AppPkg/AppPkg.dsc -D BUILD_PYTHON368
 
 
 2.5  Create Python UEFI package with all dependencies

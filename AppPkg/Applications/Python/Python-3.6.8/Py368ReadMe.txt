@@ -68,12 +68,9 @@ and that you can successfully build packages within that distribution.
         gc          itertools       math          _operator
         time
 
-  C.  Edit AppPkg/AppPkg.dsc to enable (uncomment) the Python368.inf line
-    within the [Components] section.
-
-  D.  Build AppPkg using the standard "build" command:
+  C.  Build AppPkg using the standard "build" command:
     For example, to build Python for an X64 CPU architecture:
-                    build -a X64 -p AppPkg\AppPkg.dsc
+                    build -a X64 -p AppPkg\AppPkg.dsc -D BUILD_PYTHON368
 
 4. Python-related paths and files
 =================================
@@ -133,7 +130,7 @@ system as follows:
   2. Uncomment BsdSocketLib and EfiSocketLib LibraryClasses in Python368.inf
   3. Uncomment the statement #Modules/socketmodule.c in Python368.inf
   4. Build Python interpreter application using below command
-          build -a X64 -p AppPkg\AppPkg.dsc
+          build -a X64 -p AppPkg\AppPkg.dsc -D BUILD_PYTHON368
   5. Copy Build\AppPkg\RELEASE_VS2017\X64\Python.efi to \Efi\Tools on your
      target system. Replace "RELEASE_VS2017", in the source path, with
      values appropriate for your tool chain.

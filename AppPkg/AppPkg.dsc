@@ -7,7 +7,7 @@
 #   for important information about configuring this package for your
 #   environment.
 #
-#   Copyright (c) 2010 - 2021, Intel Corporation. All rights reserved.<BR>
+#   Copyright (c) 2010 - 2024, Intel Corporation. All rights reserved.<BR>
 #   SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
@@ -120,8 +120,11 @@
       gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80400040
   }
 
-#### Un-comment the following line to build Python 3.6.8.
-# AppPkg/Applications/Python/Python-3.6.8/Python368.inf
+#### Conditional compilation of python368.inf by passing -D BUILD_PYTHON368
+#### through build command
+  !if $(BUILD_PYTHON368)
+    AppPkg/Applications/Python/Python-3.6.8/Python368.inf
+  !endif
 
 #### Un-comment the following line to build Lua.
 #  AppPkg/Applications/Lua/Lua.inf
