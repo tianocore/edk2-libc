@@ -136,17 +136,17 @@ Now clone the edk2-libc git repo by following / executing the below commands::
 
         bash$ cd ~/src
         bash$ git clone https://github.com/tianocore/edk2-libc.git
-        bash$ export PACKAGES_PATH=$HOME/src/edk2:$HOME/src/edk2-libc
 
+Set the PACKAGES_PATH and EDK2_LIBC_PATH using the commands below::
+
+        bash$ export PACKAGES_PATH=$HOME/src/edk2:$HOME/src/edk2-libc
+        bash$ export EDK2_LIBC_PATH=$HOME/src/edk2-libc
 
 Verify that you can build the hello world application from AppPkg under edk2-libc by running the following commands
 Build hello.inf from edk2-libc applications::
 
-        $bash build -p AppPkg/AppPkg.dsc -m AppPkg/Applications/Hello/Hello.inf
+        $bash build -p ../edk2-libc/AppPkg/AppPkg.dsc -m ../edk2-libc/AppPkg/Applications/Hello/Hello.inf
 
-Copy the contents of edk2-libc to edk2 folder::
-
-        bash$ cp -rf ~/src/edk2-libc/* ~/src/edk2/
 
 2.5.  Build Python Interpreter using GCC
 ----------------------------------------
@@ -156,7 +156,8 @@ Execute the below command to build the X64 version of the Python 3.6.8 interpret
         bash$ cd AppPkg/Applications/Python/Python-3.6.8/
         bash$ python srcprep.py
         bash$ cd ~/src/edk2
-        bash$ build -a X64 -b RELEASE -p AppPkg/AppPkg.dsc -m AppPkg/Applications/Python/Python-3.6.8/Python368.inf -D BUILD_PYTHON368
+        bash$ build -a X64 -b RELEASE -p ../edk2-libc/AppPkg/AppPkg.dsc \
+          -m ../edk2-libc/AppPkg/Applications/Python/Python-3.6.8/Python368.inf -D BUILD_PYTHON368
              or
         bash$ build -a X64 -b RELEASE -p AppPkg/AppPkg.dsc -D BUILD_PYTHON368
 
@@ -166,7 +167,13 @@ Execute the below command to build the X64 version of the Python 3.6.8 interpret
 
 To create an usable Python UEFI package with all the dependencies from the build environment,
 you can use the bash shell script create_python_pkg.sh available under /AppPkg/Applications/Python/Python-3.6.8
-folder.
+folder. Ensure that EDK2_LIBC_PATH environment variable to edk2-libc folder path.
+
+Ensure that EDK2_LIBC_PATH environment variable to edk2-libc folder path::
+
+        bash$ echo $EDK2_LIBC_PATH
+
+The environment variable should be set to the folder path for the edk2-libc cloned repo.
 
 Use the following commands to create Python UEFI package::
 

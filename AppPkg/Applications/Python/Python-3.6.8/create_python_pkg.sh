@@ -59,7 +59,24 @@ then
    exit
 fi
 
-cd ../../../../
+echo current working directory `pwd`
+echo changing working directory to $WORKSPACE
+cd $WORKSPACE
+ls
+
+# check if the EDK2_LIBC_PATH environment variable set or not
+if [ -z $EDK2_LIBC_PATH ]
+then
+    echo Warning: EDK2_LIBC_PATH environment variable is not set
+    echo It should be set to edk2-libc folder path.
+    echo.
+    echo Assuming that edk2-libc contents are copied to edk2 folder
+    echo at compilation time, setting this variable to edk2 path.
+    export EDK2_LIBC_PATH=$WORKSPACE
+fi
+
+echo edk2 libc path $EDK2_LIBC_PATH
+
 PYTHON_BIN="Build/AppPkg/$TARGET"_"$TOOL_CHAIN_TAG/$ARCH/Python.efi"
 if [ ! -f $PYTHON_BIN ]
 then
@@ -86,8 +103,8 @@ then
     mkdir -p $OUT_FOLDER/EFI/StdLib/etc
 fi
 
-cp -rf AppPkg/Applications/Python/Python-3.6.8/Lib/*  $OUT_FOLDER/EFI/StdLib/lib/python36.8/
-cp -rf StdLib/Efi/StdLib/etc/*  $OUT_FOLDER/EFI/StdLib/etc/
+cp -rf $EDK2_LIBC_PATH/AppPkg/Applications/Python/Python-3.6.8/Lib/*  $OUT_FOLDER/EFI/StdLib/lib/python36.8/
+cp -rf $EDK2_LIBC_PATH/StdLib/Efi/StdLib/etc/*  $OUT_FOLDER/EFI/StdLib/etc/
 
 if [ ${OUT_FOLDER:0:1} == "/" ]
 then

@@ -27,7 +27,22 @@ echo.
 goto :eof
 
 :continue
-cd ..\..\..\..\
+echo current working directory %CD%
+echo changing working directory to workspace %WORKSPACE%
+cd %WORKSPACE%
+dir
+
+if "%EDK2_LIBC_PATH%" == "" (
+    echo Warning: EDK2_LIBC_PATH environment variable is not set
+    echo It should be set to edk2-libc folder path.
+    echo.
+    echo Assuming that edk2-libc contents are copied to edk2 folder
+    echo at compilation time, setting this variable to edk2 path.
+    set EDK2_LIBC_PATH=%WORKSPACE%
+)
+
+echo edk2 libc path %EDK2_LIBC_PATH%
+
 if not exist Build\AppPkg\%TARGET%_%TOOL_CHAIN_TAG%\%ARCH%\Python.efi (
     goto error
 )
@@ -43,8 +58,8 @@ if not exist %OUT_FOLDER%\EFI\StdLib\lib\python36.8 (
 if not exist %OUT_FOLDER%\EFI\StdLib\etc (
    mkdir %OUT_FOLDER%\EFI\StdLib\etc
 )
-xcopy AppPkg\Applications\Python\Python-3.6.8\Lib\*  %OUT_FOLDER%\EFI\StdLib\lib\python36.8\    /Y /S /I
-xcopy StdLib\Efi\StdLib\etc\*  %OUT_FOLDER%\EFI\StdLib\etc\  /Y /S /I
+xcopy %EDK2_LIBC_PATH%\AppPkg\Applications\Python\Python-3.6.8\Lib\*  %OUT_FOLDER%\EFI\StdLib\lib\python36.8\    /Y /S /I
+xcopy %EDK2_LIBC_PATH%\StdLib\Efi\StdLib\etc\*  %OUT_FOLDER%\EFI\StdLib\etc\  /Y /S /I
 echo.
 
 if not x%OUT_FOLDER::=%==x%OUT_FOLDER% (
