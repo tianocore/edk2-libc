@@ -1,0 +1,69 @@
+# GitHub actions workflow to build python uefi using gcc
+#
+# Copyright (c) 2023-2024, Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: Build Python Interpreter for UEFI with GCC
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential uuid-dev iasl git nasm python3-distutils
+
+    - name: Clone EDK2
+      run: |
+        git clone https://github.com/tianocore/edk2.git
+        cd edk2
+        git submodule update --init
+
+    - name: Build EDK2 Base Tools
+      run: |
+        cd edk2
+        . edksetup.sh
+        make -C BaseTools
+
+    - name: Run srcprep.py
+      run: |
+        cd AppPkg/Applications/Python/Python-3.6.8/
+        python3 srcprep.py
+
+    - name: Build Python UEFI
+      run: |
+        export PACKAGES_PATH=`pwd`/edk2:`pwd`:
+        export EDK2_LIBC_PATH=`pwd`
+        cd edk2
+        . edksetup.sh
+        build -t GCC5 -a X64 -b RELEASE -p $EDK2_LIBC_PATH/AppPkg/AppPkg.dsc -D BUILD_PYTHON368
+
+    - name: Create PyUEFI package
+      run: |
+        export WORKSPACE=`pwd`/edk2
+        echo WORKSPACE is $WORKSPACE
+        export EDK2_LIBC_PATH=`pwd`
+        . AppPkg/Applications/Python/Python-3.6.8/create_python_pkg.sh GCC5 RELEASE X64 myUEFIPy
+
+    - name: List build artifacts
+      run: |
+        ls -R edk2/myUEFIPy
+
+    - name: Upload build output as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: myUEFIPy-build-gcc-output
+        path: edk2/myUEFIPy/**/*
