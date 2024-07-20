@@ -1,7 +1,7 @@
 /** @file
   Windows version of the OOB Receive application
 
-  Copyright (c) 2011-2012, Intel Corporation. All rights reserved.
+  Copyright (c) 2011 - 2024, Intel Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -150,7 +150,7 @@ OobRx (
             //
             //  Display the received OOB data
             //
-            printf ( "%5Ld OOB bytes received\r\n", (UINT64)BytesReceived );
+            printf ( "%5llu OOB bytes received\r\n", (UINT64)BytesReceived );
 
             //
             //  Account for the bytes received
@@ -183,7 +183,7 @@ OobRx (
               //
               //  Display the received data
               //
-              printf ( "%4Ld bytes received\r\n", (UINT64)BytesReceived );
+              printf ( "%4llu bytes received\r\n", (UINT64)BytesReceived );
 
               //
               //  Account for the bytes received

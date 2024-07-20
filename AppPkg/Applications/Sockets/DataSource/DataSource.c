@@ -1,7 +1,7 @@
 /** @file
   Data source for network testing.
 
-  Copyright (c) 2011-2012, Intel Corporation. All rights reserved.
+  Copyright (c) 2011 - 2024, Intel Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -538,7 +538,7 @@ EFI_STATUS
 SocketSend (
   )
 {
-  size_t BytesSent;
+  size_t BytesSentLocal;
   EFI_STATUS Status;
   EFI_TPL TplPrevious;
 
@@ -562,8 +562,8 @@ SocketSend (
     //
     //  Send some bytes
     //
-    BytesSent = write ( Socket, &Buffer[0], sizeof ( Buffer ));
-    if ( -1 == BytesSent ) {
+    BytesSentLocal = write ( Socket, &Buffer[0], sizeof ( Buffer ));
+    if ( -1 == BytesSentLocal ) {
       DEBUG (( DEBUG_INFO,
                 "ERROR: send failed, errno: %d\r\n",
                 errno ));
@@ -589,7 +589,7 @@ Status = EFI_NOT_STARTED;
     //
     //  Account for the data sent
     //
-    TotalBytesSent += BytesSent;
+    TotalBytesSent += BytesSentLocal;
 
     //
     //  Release the TimerCallback routine synchronization

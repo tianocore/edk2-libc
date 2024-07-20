@@ -41,6 +41,11 @@
  * from getnetent.c	1.1 (Coimbra) 93/06/02
  */
 
+/*
+ * Copyright (c) 2023 - 2024, Intel Corporation. All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause-Patent
+ */
+
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)getnetent.c	8.1 (Berkeley) 6/4/93";
 static char orig_rcsid[] = "From: Id: getnetent.c,v 8.4 1997/06/01 20:34:37 vixie Exp";
@@ -155,13 +160,13 @@ found:
 }
 
 struct netent *
-_getnetbyhtaddr(register unsigned long net, register int type)
+_getnetbyhtaddr(register unsigned long net_local, register int type)
 {
 	register struct netent *p;
 
 	setnetent(_net_stayopen);
 	while ( NULL != (p = getnetent()) )
-		if (p->n_addrtype == type && p->n_net == net)
+        if (p->n_addrtype == type && p->n_net == net_local)
 			break;
 	if (!_net_stayopen)
 		endnetent();

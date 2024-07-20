@@ -7,7 +7,7 @@
   per default, eg. serial line).
 
   Copyright (C) 2014, Red Hat, Inc.
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2024, Intel Corporation. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -458,10 +458,10 @@ SetupInputOutput (
 
     case 'h':
       fprintf (stderr,
-        "%1$s: simple OrderedCollectionLib tester\n"
+        "%s: simple OrderedCollectionLib tester\n"
         "\n"
-        "Usage: 1. %1$s [-i InputFile] [-o OutputFile]\n"
-        "       2. %1$s -h\n"
+        "Usage: 1. %s [-i InputFile] [-o OutputFile]\n"
+        "       2. %s -h\n"
         "\n"
         "Options:\n"
         "  -i InputFile : read commands from InputFile\n"
@@ -469,7 +469,7 @@ SetupInputOutput (
         "  -o OutputFile: write command responses to OutputFile\n"
         "                 (will write to stdout if absent)\n"
         "  -h           : print this help and exit\n"
-        "\n", ArgV[0]);
+        "\n", ArgV[0], ArgV[0], ArgV[0]);
       ListCommands ();
       exit (EXIT_SUCCESS);
 

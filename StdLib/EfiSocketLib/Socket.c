@@ -5,7 +5,7 @@
   * Bound - pSocket->PortList is not NULL
   * Listen - AcceptWait event is not NULL
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2024, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 
@@ -570,7 +570,7 @@ EslSocket (
   int ApiArraySize;
   ESL_SOCKET * pSocket;
   EFI_STATUS Status;
-  int errno;
+  int error_num;
 
   DBG_ENTER ( );
 
@@ -583,7 +583,7 @@ EslSocket (
   }
 
   //  Assume success
-  errno = 0;
+  error_num = 0;
   Status = EFI_SUCCESS;
 
   //  Use break instead of goto
@@ -595,7 +595,7 @@ EslSocket (
       DEBUG (( DEBUG_ERROR | DEBUG_SOCKET,
                 "ERROR - Invalid domain value\r\n" ));
       Status = EFI_INVALID_PARAMETER;
-      errno = EAFNOSUPPORT;
+      error_num = EAFNOSUPPORT;
       break;
     }
 
@@ -625,7 +625,7 @@ EslSocket (
                 "ERROR - Invalid type value\r\n" ));
       //  The socket type is not supported
       Status = EFI_INVALID_PARAMETER;
-      errno = EPROTOTYPE;
+      error_num = EPROTOTYPE;
       break;
     }
 
@@ -665,15 +665,15 @@ EslSocket (
       if ( ppApiArrayEnd <= ppApiArray ) {
         DEBUG (( DEBUG_ERROR | DEBUG_SOCKET,
                   "ERROR - The protocol is not supported!\r\n" ));
-        errno = EPROTONOSUPPORT;
+        error_num = EPROTONOSUPPORT;
         break;
       }
 
       //  The driver does not support this protocol
       DEBUG (( DEBUG_ERROR | DEBUG_SOCKET,
                 "ERROR - The protocol does not support this socket type!\r\n" ));
-      errno = EPROTONOSUPPORT;
-      errno = EPROTOTYPE;
+      error_num = EPROTONOSUPPORT;
+      error_num = EPROTOTYPE;
       break;
     }
     //  Save the socket attributes
@@ -687,7 +687,7 @@ EslSocket (
   }
   //  Return the operation status
   if ( NULL != pErrno ) {
-    *pErrno = errno;
+    *pErrno = error_num;
   }
   DBG_EXIT_STATUS ( Status );
   return Status;
@@ -1334,7 +1334,7 @@ EslSocketClosePoll (
   IN int * pErrno
   )
 {
-  int errno;
+  int error_num;
   ESL_LAYER * pLayer;
   ESL_SOCKET * pNextSocket;
   ESL_SOCKET * pSocket;
@@ -1346,7 +1346,7 @@ EslSocketClosePoll (
   //
   //  Assume success
   //
-  errno = 0;
+  error_num = 0;
   Status = EFI_SUCCESS;
 
   //
@@ -1401,7 +1401,7 @@ EslSocketClosePoll (
           //  At least one port is still open
           //
           Status = EFI_NOT_READY;
-          errno = EAGAIN;
+          error_num = EAGAIN;
         }
       }
       else {
@@ -1409,7 +1409,7 @@ EslSocketClosePoll (
         //  SocketCloseStart was not called
         //
         Status = EFI_NOT_STARTED;
-        errno = EPERM;
+        error_num = EPERM;
       }
       break;
     }
@@ -1428,7 +1428,7 @@ EslSocketClosePoll (
     //  Socket not found
     //
     Status = EFI_NOT_FOUND;
-    errno = ENOTSOCK;
+    error_num = ENOTSOCK;
   }
 
   //
@@ -1440,7 +1440,7 @@ EslSocketClosePoll (
   //  Return the operation status
   //
   if ( NULL != pErrno ) {
-    *pErrno = errno;
+    *pErrno = error_num;
   }
   DBG_EXIT_STATUS ( Status );
   return Status;
@@ -1477,7 +1477,7 @@ EslSocketCloseStart (
   IN int * pErrno
   )
 {
-  int errno;
+  int error_num;
   ESL_PORT * pNextPort;
   ESL_PORT * pPort;
   ESL_SOCKET * pSocket;
@@ -1490,7 +1490,7 @@ EslSocketCloseStart (
   //  Assume success
   //
   Status = EFI_SUCCESS;
-  errno = 0;
+  error_num = 0;
 
   //
   //  Synchronize with the socket layer
@@ -1521,7 +1521,7 @@ EslSocketCloseStart (
                                          DEBUG_CLOSE | DEBUG_LISTEN | DEBUG_CONNECTION );
       if (( EFI_SUCCESS != Status )
         && ( EFI_NOT_READY != Status )) {
-        errno = EIO;
+        error_num = EIO;
         break;
       }
 
@@ -1535,12 +1535,12 @@ EslSocketCloseStart (
     //  Attempt to finish closing the socket
     //
     if ( NULL == pPort ) {
-      Status = EslSocketClosePoll ( pSocketProtocol, &errno );
+      Status = EslSocketClosePoll ( pSocketProtocol, &error_num );
     }
   }
   else {
     Status = EFI_NOT_READY;
-    errno = EAGAIN;
+    error_num = EAGAIN;
   }
 
   //
@@ -1552,7 +1552,7 @@ EslSocketCloseStart (
   //  Return the operation status
   //
   if ( NULL != pErrno ) {
-    *pErrno = errno;
+    *pErrno = error_num;
   }
   DBG_EXIT_STATUS ( Status );
   return Status;
@@ -1889,7 +1889,7 @@ EslSocketFree (
   )
 {
   EFI_HANDLE ChildHandle;
-  int errno;
+  int error_num;
   ESL_LAYER * pLayer;
   ESL_SOCKET * pSocket;
   ESL_SOCKET * pSocketPrevious;
@@ -1901,7 +1901,7 @@ EslSocketFree (
   //
   //  Assume failure
   //
-  errno = EIO;
+  error_num = EIO;
   pSocket = NULL;
   Status = EFI_INVALID_PARAMETER;
 
@@ -1986,7 +1986,7 @@ EslSocketFree (
                     "0x%08x: Free pSocket, %d bytes\r\n",
                     pSocket,
                     sizeof ( *pSocket )));
-          errno = 0;
+          error_num = 0;
         }
         else {
           DEBUG (( DEBUG_ERROR | DEBUG_POOL,
@@ -2014,10 +2014,10 @@ EslSocketFree (
   }
 
   //
-  //  Return the errno value if possible
+  //  Return the error_num value if possible
   //
   if ( NULL != pErrno ) {
-    *pErrno = errno;
+    *pErrno = error_num;
   }
 
   //
@@ -2751,7 +2751,7 @@ EslSocketOptionGet (
   IN int * pErrno
   )
 {
-  int errno;
+  int error_num;
   socklen_t LengthInBytes;
   socklen_t MaxBytes;
   CONST UINT8 * pOptionData;
@@ -2763,7 +2763,7 @@ EslSocketOptionGet (
   //
   //  Assume failure
   //
-  errno = EINVAL;
+  error_num = EINVAL;
   Status = EFI_INVALID_PARAMETER;
 
   //
@@ -2795,7 +2795,7 @@ EslSocketOptionGet (
                                                  OptionName,
                                                  (CONST void ** __restrict)&pOptionData,
                                                  &LengthInBytes );
-          errno = pSocket->errno;
+          error_num = pSocket->errno;
           break;
         }
         else {
@@ -2814,7 +2814,7 @@ EslSocketOptionGet (
                   "ERROR - %a does not support any options!\r\n",
                   pSocket->pApi->pName ));
       }
-      errno = ENOPROTOOPT;
+      error_num = ENOPROTOOPT;
       Status = EFI_INVALID_PARAMETER;
       break;
 
@@ -2825,7 +2825,7 @@ EslSocketOptionGet (
         //  Socket option not supported
         //
         DEBUG (( DEBUG_INFO | DEBUG_OPTION, "ERROR - Invalid socket option!\r\n" ));
-        errno = EINVAL;
+        error_num = EINVAL;
         Status = EFI_INVALID_PARAMETER;
         break;
 
@@ -2927,7 +2927,7 @@ EslSocketOptionGet (
       if ( LengthInBytes < MaxBytes ) {
         ZeroMem ( &((UINT8 *)pOptionValue)[LengthInBytes], MaxBytes - LengthInBytes );
       }
-      errno = 0;
+      error_num = 0;
       Status = EFI_SUCCESS;
     }
   }
@@ -2936,7 +2936,7 @@ EslSocketOptionGet (
   //  Return the operation status
   //
   if ( NULL != pErrno ) {
-    *pErrno = errno;
+    *pErrno = error_num;
   }
   DBG_EXIT_STATUS ( Status );
   return Status;
@@ -2971,7 +2971,7 @@ EslSocketOptionSet (
   )
 {
   BOOLEAN bTrueFalse;
-  int errno;
+  int error_num;
   socklen_t LengthInBytes;
   UINT8 * pOptionData;
   ESL_SOCKET * pSocket;
@@ -2982,7 +2982,7 @@ EslSocketOptionSet (
   //
   //  Assume failure
   //
-  errno = EINVAL;
+  error_num = EINVAL;
   Status = EFI_INVALID_PARAMETER;
 
   //
@@ -3015,7 +3015,7 @@ EslSocketOptionSet (
                                                    OptionName,
                                                    pOptionValue,
                                                    OptionLength );
-            errno = pSocket->errno;
+            error_num = pSocket->errno;
             break;
           }
           else {
@@ -3034,7 +3034,7 @@ EslSocketOptionSet (
                     "ERROR - %a does not support any options!\r\n",
                     pSocket->pApi->pName ));
         }
-        errno = ENOPROTOOPT;
+        error_num = ENOPROTOOPT;
         Status = EFI_INVALID_PARAMETER;
         break;
 
@@ -3046,7 +3046,7 @@ EslSocketOptionSet (
           //
           DEBUG (( DEBUG_OPTION,
                     "ERROR - Sockets does not support this option!\r\n" ));
-          errno = EINVAL;
+          error_num = EINVAL;
           Status = EFI_INVALID_PARAMETER;
           break;
 
@@ -3133,7 +3133,7 @@ EslSocketOptionSet (
           //  Set the option value
           //
           CopyMem ( pOptionData, pOptionValue, LengthInBytes );
-          errno = 0;
+          error_num = 0;
           Status = EFI_SUCCESS;
         }
         else {
@@ -3150,7 +3150,7 @@ EslSocketOptionSet (
   //  Return the operation status
   //
   if ( NULL != pErrno ) {
-    *pErrno = errno;
+    *pErrno = error_num;
   }
   DBG_EXIT_STATUS ( Status );
   return Status;

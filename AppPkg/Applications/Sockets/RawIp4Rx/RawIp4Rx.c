@@ -1,7 +1,7 @@
 /** @file
   Raw IP4 receive application
 
-  Copyright (c) 2011-2012, Intel Corporation. All rights reserved.
+  Copyright (c) 2011 - 2024, Intel Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -157,7 +157,7 @@ RawIp4Rx (
         //  Display the bytes received
         //
         if ( 0 == RetVal ) {
-          printf ( "Total Bytes Received:  %Ld\r\n", TotalBytesReceived );
+          printf ( "Total Bytes Received:  %llu\r\n", TotalBytesReceived );
         }
 
         //

@@ -5,7 +5,7 @@
     Steven Pemberton, CWI, Amsterdam; "Steven.Pemberton@cwi.nl"
     Used with permission.
 
-    Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2010 - 2024, Intel Corporation. All rights reserved.<BR>
     This program and the accompanying materials
     are licensed and made available under the terms and conditions of the BSD License
     which accompanies this distribution. The full text of the license may be found at
@@ -918,15 +918,15 @@ memeq(
 }
 
 Void
-farewell(int bugs)
+farewell(int bugs_local)
 {
-  if (bugs == 0) exit(0);
+  if (bugs_local == 0) exit(0);
   printf("\n%sFor hints on dealing with the ", co);
-  if (bugs == 1) printf("problem");
-  else printf("%d problems", bugs);
+  if (bugs_local == 1) printf("problem");
+  else printf("%d problems", bugs_local);
   printf(" above\n   see the section 'TROUBLESHOOTING' in the file ");
   printf("%s%s\n", FILENAME, oc);
-  exit(bugs);
+  exit(bugs_local);
 }
 
 /* The program has received a signal where it wasn't expecting one */
@@ -1927,51 +1927,51 @@ int cprop( void )
 
     if (c_signed) {
 #ifndef NO_UC
-/* Syntax error? Define NO_UC */ Volatile unsigned char c1, char_max;
-      c1=0; char_max=0;
+/* Syntax error? Define NO_UC */ Volatile unsigned char c1, char_max_local;
+      c1=0; char_max_local=0;
       c1++;
-      if (setjmp(lab)==0) { /* Yields char_max */
-        while (c1>char_max) {
-          char_max=c1;
+      if (setjmp(lab)==0) { /* Yields char_max_local */
+        while (c1>char_max_local) {
+          char_max_local=c1;
           c1++;
         }
       }
       Unexpected(4);
       if (sizeof(char) == sizeof(int)) {
         u_define(D_UCHAR_MAX, "", "UCHAR", "_MAX",
-           (ulong) char_max,
+           (ulong) char_max_local,
            (ulong) UCHAR_MAX, "");
       } else {
         i_define(D_UCHAR_MAX, "", "UCHAR", "_MAX",
-           (long) char_max, 0L,
+           (long) char_max_local, 0L,
            (long) UCHAR_MAX, "");
       }
 #endif
     } else {
 #ifndef NO_SC
-/* Syntax error? Define NO_SC */ Volatile signed char c1, char_max, char_min;
-      c1=0; char_max=0;
+/* Syntax error? Define NO_SC */ Volatile signed char c1, char_max_local, char_min_local;
+      c1=0; char_max_local=0;
       c1++;
-      if (setjmp(lab)==0) { /* Yields char_max */
-        while (c1>char_max) {
-          char_max=c1;
+      if (setjmp(lab)==0) { /* Yields char_max_local */
+        while (c1>char_max_local) {
+          char_max_local=c1;
           c1++;
         }
       }
-      c1=0; char_min=0;
+      c1=0; char_min_local=0;
       c1--;
-      if (setjmp(lab)==0) { /* Yields char_min */
-        while (c1<char_min) {
-          char_min=c1;
+      if (setjmp(lab)==0) { /* Yields char_min_local */
+        while (c1<char_min_local) {
+          char_min_local=c1;
           c1--;
         }
       }
       Unexpected(5);
       i_define(D_SCHAR_MIN, "", "SCHAR", "_MIN",
-         (long) char_min, (long) maxint,
+         (long) char_min_local, (long) maxint,
          (long) SCHAR_MIN, "");
       i_define(D_SCHAR_MAX, "", "SCHAR", "_MAX",
-         (long) char_max, 0L,
+         (long) char_max_local, 0L,
          (long) SCHAR_MAX, "");
 #endif /* NO_SC */
     }

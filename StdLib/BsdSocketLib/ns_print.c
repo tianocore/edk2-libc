@@ -55,6 +55,11 @@
  *
  */
 
+/*
+ * Copyright (c) 2023 - 2024, Intel Corporation. All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause-Patent
+ */
+
 /* Import. */
 
 #include <sys/types.h>
@@ -211,7 +216,7 @@ ns_sprintrrf(const u_char *msg, size_t msglen,
     break;
 
   case ns_t_soa: {
-    u_long t;
+    u_long t_local;
 
     /* Server name. */
     T(addname(msg, msglen, &rdata, origin, &buf, &buflen));
@@ -226,45 +231,45 @@ ns_sprintrrf(const u_char *msg, size_t msglen,
       goto formerr;
 
     /* Serial number. */
-    t = ns_get32(rdata);  rdata += NS_INT32SZ;
+    t_local = ns_get32(rdata);  rdata += NS_INT32SZ;
     T(addstr("\t\t\t\t\t", 5, &buf, &buflen));
-    len = SPRINTF((tmp, "%lu", (unsigned long)t));
+    len = SPRINTF((tmp, "%lu", (unsigned long)t_local));
     T(addstr(tmp, len, &buf, &buflen));
     T(spaced = addtab(len, 16, spaced, &buf, &buflen));
     T(addstr("; serial\n", 9, &buf, &buflen));
     spaced = 0;
 
     /* Refresh interval. */
-    t = ns_get32(rdata);  rdata += NS_INT32SZ;
+    t_local = ns_get32(rdata);  rdata += NS_INT32SZ;
     T(addstr("\t\t\t\t\t", 5, &buf, &buflen));
-    T(len = ns_format_ttl(t, buf, buflen));
+    T(len = ns_format_ttl(t_local, buf, buflen));
     addlen(len, &buf, &buflen);
     T(spaced = addtab(len, 16, spaced, &buf, &buflen));
     T(addstr("; refresh\n", 10, &buf, &buflen));
     spaced = 0;
 
     /* Retry interval. */
-    t = ns_get32(rdata);  rdata += NS_INT32SZ;
+    t_local = ns_get32(rdata);  rdata += NS_INT32SZ;
     T(addstr("\t\t\t\t\t", 5, &buf, &buflen));
-    T(len = ns_format_ttl(t, buf, buflen));
+    T(len = ns_format_ttl(t_local, buf, buflen));
     addlen(len, &buf, &buflen);
     T(spaced = addtab(len, 16, spaced, &buf, &buflen));
     T(addstr("; retry\n", 8, &buf, &buflen));
     spaced = 0;
 
     /* Expiry. */
-    t = ns_get32(rdata);  rdata += NS_INT32SZ;
+    t_local = ns_get32(rdata);  rdata += NS_INT32SZ;
     T(addstr("\t\t\t\t\t", 5, &buf, &buflen));
-    T(len = ns_format_ttl(t, buf, buflen));
+    T(len = ns_format_ttl(t_local, buf, buflen));
     addlen(len, &buf, &buflen);
     T(spaced = addtab(len, 16, spaced, &buf, &buflen));
     T(addstr("; expiry\n", 9, &buf, &buflen));
     spaced = 0;
 
     /* Minimum TTL. */
-    t = ns_get32(rdata);  rdata += NS_INT32SZ;
+    t_local = ns_get32(rdata);  rdata += NS_INT32SZ;
     T(addstr("\t\t\t\t\t", 5, &buf, &buflen));
-    T(len = ns_format_ttl(t, buf, buflen));
+    T(len = ns_format_ttl(t_local, buf, buflen));
     addlen(len, &buf, &buflen);
     T(addstr(" )", 2, &buf, &buflen));
     T(spaced = addtab(len, 16, spaced, &buf, &buflen));
@@ -276,15 +281,15 @@ ns_sprintrrf(const u_char *msg, size_t msglen,
   case ns_t_mx:
   case ns_t_afsdb:
   case ns_t_rt: {
-    u_int t;
+    u_int t_local;
 
     if (rdlen < NS_INT16SZ)
       goto formerr;
 
     /* Priority. */
-    t = ns_get16(rdata);
+    t_local = ns_get16(rdata);
     rdata += NS_INT16SZ;
-    len = SPRINTF((tmp, "%u ", (unsigned int)t));
+    len = SPRINTF((tmp, "%u ", (unsigned int)t_local));
     T(addstr(tmp, len, &buf, &buflen));
 
     /* Target. */
@@ -294,15 +299,15 @@ ns_sprintrrf(const u_char *msg, size_t msglen,
       }
 
   case ns_t_px: {
-    u_int t;
+    u_int t_local;
 
     if (rdlen < NS_INT16SZ)
       goto formerr;
 
     /* Priority. */
-    t = ns_get16(rdata);
+    t_local = ns_get16(rdata);
     rdata += NS_INT16SZ;
-    len = SPRINTF((tmp, "%u ", (unsigned int)t));
+    len = SPRINTF((tmp, "%u ", (unsigned int)t_local));
     T(addstr(tmp, len, &buf, &buflen));
 
     /* Name1. */
@@ -503,33 +508,33 @@ ns_sprintrrf(const u_char *msg, size_t msglen,
       }
 
   case ns_t_sig: {
-    u_int type, algorithm, labels, footprint;
+    u_int type_local, algorithm, labels, footprint;
     const char *leader;
-    u_long t;
+    u_long t_local;
     int n;
 
     if (rdlen < 22)
       goto formerr;
 
     /* Type covered, Algorithm, Label count, Original TTL. */
-          type = ns_get16(rdata);  rdata += NS_INT16SZ;
+          type_local = ns_get16(rdata);  rdata += NS_INT16SZ;
     algorithm = *rdata++;
     labels = *rdata++;
-    t = ns_get32(rdata);  rdata += NS_INT32SZ;
+    t_local = ns_get32(rdata);  rdata += NS_INT32SZ;
     len = SPRINTF((tmp, " %s %d %lu ",
-                   p_type((int)type), (int)algorithm, (unsigned long)t));
+                   p_type((int)type_local), (int)algorithm, (unsigned long)t_local));
     T(addstr(tmp, len, &buf, &buflen));
     if (labels != (u_int)dn_count_labels(name))
       goto formerr;
 
     /* Signature expiry. */
-    t = ns_get32(rdata);  rdata += NS_INT32SZ;
-    len = SPRINTF((tmp, "%s ", p_secstodate(t)));
+    t_local = ns_get32(rdata);  rdata += NS_INT32SZ;
+    len = SPRINTF((tmp, "%s ", p_secstodate(t_local)));
     T(addstr(tmp, len, &buf, &buflen));
 
     /* Time signed. */
-    t = ns_get32(rdata);  rdata += NS_INT32SZ;
-    len = SPRINTF((tmp, "%s ", p_secstodate(t)));
+    t_local = ns_get32(rdata);  rdata += NS_INT32SZ;
+    len = SPRINTF((tmp, "%s ", p_secstodate(t_local)));
     T(addstr(tmp, len, &buf, &buflen));
 
     /* Signature Footprint. */
