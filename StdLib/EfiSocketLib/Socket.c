@@ -2892,6 +2892,13 @@ EslSocketOptionGet (
         pOptionData = (CONST UINT8 *)&pSocket->Type;
         LengthInBytes = sizeof ( pSocket->Type );
         break;
+      case SO_ERROR:
+        //
+        //  Return the socket type
+        //
+        pOptionData = (CONST UINT8 *)&pSocket->errno;
+        LengthInBytes = sizeof ( pSocket->errno );
+        break;
       }
       break;
     }
