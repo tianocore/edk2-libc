@@ -1,0 +1,75 @@
+# GitHub actions workflow to build python uefi using VS2022
+#
+# Copyright (c) 2023 - 2024, Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: Build Python Interpreter for UEFI using VS2022
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      NASM_PREFIX: "C:\\Program Files\\NASM\\"
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install NASM
+      run: choco install nasm
+
+    - name: Clone EDK2
+      run: |
+        git clone https://github.com/tianocore/edk2.git
+        cd edk2
+        git submodule update --init
+
+    - name: Build EDK2 Base Tools
+      run: |
+        cd edk2
+        dir
+        edksetup.bat ForceRebuild
+
+    - name: Run srcprep.py
+      run: |
+        echo switching to AppPkg\Applications\Python\Python-3.6.8\
+        cd AppPkg\Applications\Python\Python-3.6.8\
+        dir
+        echo run srcprep.py file
+        python srcprep.py
+
+    - name: Build Python UEFI
+      run: |
+        set PACKAGES_PATH=%CD%\edk2;%CD%;
+        set EDK2_LIBC_PATH=%CD%
+        cd edk2
+        call edksetup.bat
+        build -t VS2022 -a X64 -b RELEASE -p %EDK2_LIBC_PATH%\AppPkg\AppPkg.dsc -D BUILD_PYTHON368
+
+    - name: Create Python UEFI package
+      run: |
+        set WORKSPACE=%CD%\edk2
+        set EDK2_LIBC_PATH=%CD%
+        dir
+        call AppPkg\Applications\Python\Python-3.6.8\create_python_pkg.bat VS2022 RELEASE X64 myUEFIPy
+
+    - name: List build artifacts
+      run: |
+        dir /S edk2\myUEFIPy
+
+    - name: Upload build output as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: myUEFIPy-build-VS2022-output
+        path: edk2\myUEFIPy\**\*
