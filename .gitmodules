@@ -1,3 +1,0 @@
-[submodule "AppPkg/CommonCode/SetupFiles"]
-	path = AppPkg/CommonCode/SetupFiles
-	url = https://github.com/intel-innersource/applications.validation.advancedsystemtools.products.setup-files.git
