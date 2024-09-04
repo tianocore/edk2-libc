@@ -1,0 +1,21 @@
+## @file
+# This file contains the code owners of edk2-libc repo
+#
+# Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+# This file contains the list of maintainers (i.e. people who own the
+# areas and can commit changes) for various parts of edk2-libc.
+
+# EDK II Platforms maintainers
+# ============================
+
+* @mdkinney @bcran @jpshivakavi
+
+# AppPkg owners
+AppPkg/** @mdkinney @jpshivakavi @bcran
+
+# StdLib and StdLibPrivateInternalFiles owners
+StdLib/** @mdkinney @jpshivakavi @bcran
+StdLibPrivateInternalFiles/** @mdkinney @jpshivakavi @bcran
