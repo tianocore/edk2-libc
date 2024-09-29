@@ -65,16 +65,10 @@
 
   LuaLib|AppPkg/Applications/Lua/LuaLib.inf           # Lua language library
 
-[LibraryClasses.ARM]
+[LibraryClasses.ARM, LibraryClasses.AArch64]
+!if "MSFT" not in $(FAMILY)
   NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
-  NULL|StdLib/LibC/Softfloat/Softfloat.inf
-
-  # Add support for GCC stack protector
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
-
-[LibraryClasses.AArch64]
-  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
-
+!endif
   # Use the softfloat library to cover missing hardfloat operations.
   NULL|StdLib/LibC/Softfloat/Softfloat.inf
 
