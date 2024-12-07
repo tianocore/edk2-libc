@@ -67,13 +67,13 @@
 
 [LibraryClasses.ARM, LibraryClasses.AArch64]
 !if "MSFT" not in $(FAMILY)
-  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+  NULL|MdePkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 !endif
   # Use the softfloat library to cover missing hardfloat operations.
   NULL|StdLib/LibC/Softfloat/Softfloat.inf
 
   # Add support for GCC stack protector
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+  NULL|MdePkg/Library/StackCheckLib/StackCheckLibStaticInit.inf
 
 [Components]
 # BaseLib and BaseMemoryLib need to be built with the /GL- switch when using the Microsoft
