@@ -8,6 +8,6 @@ Since it's an extra file to remember to update when changing maintainers or revi
 
 | Name                 | e-mail address                | Githubusername                                  |
 |----------------------|-------------------------------|-------------------------------------------------|
-| Rebecca Cran         | rebecca@bsdio.com             | [@bcran](https://github.com/bcran)              |
+| Rebecca Cran         | rebecca@bsdio.com             | [@bexcran](https://github.com/bexcran)          |
 | Michael D Kinney     | michael.d.kinney@intel.com    | [@mdkinney](https://github.com/mdkinney)        |
 | Jayaprakash Nevara   | n.jayaprakash@intel.com       | [@jpshivakavi](https://github.com/jpshivakavi)  |
