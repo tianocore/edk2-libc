@@ -11,11 +11,11 @@
 # EDK II Platforms maintainers
 # ============================
 
-* @mdkinney @bcran @jpshivakavi
+* @mdkinney @bexcran @jpshivakavi
 
 # AppPkg owners
-AppPkg/** @mdkinney @jpshivakavi @bcran
+AppPkg/** @mdkinney @jpshivakavi @bexcran
 
 # StdLib and StdLibPrivateInternalFiles owners
-StdLib/** @mdkinney @jpshivakavi @bcran
-StdLibPrivateInternalFiles/** @mdkinney @jpshivakavi @bcran
+StdLib/** @mdkinney @jpshivakavi @bexcran
+StdLibPrivateInternalFiles/** @mdkinney @jpshivakavi @bexcran
