@@ -28,3 +28,6 @@
 [Includes.AARCH64]
   # Use the ARM headers for now.
   Include/Arm
+
+[Includes.LOONGARCH64]
+  Include/LoongArch64
