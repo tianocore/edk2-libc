@@ -1,0 +1,70 @@
+# GitHub actions workflow to build AppPkg EFI using gcc
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: Build Project for AppPkg EFI with GCC
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: RELEASE
+  COMPILER: GCC5
+  GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
+  GCC5_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        arch: [X64, AARCH64, LOONGARCH64]
+        include:
+          - arch: X64
+            short: x64
+            pkgs: null
+          - arch: AARCH64
+            short: aa64
+            pkgs: gcc-aarch64-linux-gnu
+          - arch: LOONGARCH64
+            short: loongarch64
+            pkgs: null
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential uuid-dev iasl git nasm python3-distutils
+          if [ -n "${{ matrix.pkgs }}" ]; then
+            sudo apt-get install -y ${{ matrix.pkgs }}
+          else
+            echo "No additional packages for ${{ matrix.arch }}"
+          fi
+
+      - name: Download and Install loongarch64 toolchain
+        if: matrix.arch == 'loongarch64'
+        run: |
+          curl -L -O https://github.com/loongson/build-tools/releases/download/2024.11.01/x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
+          tar -xJf x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
+          echo "$PWD/cross-tools/bin" >> "$GITHUB_PATH"
+
+      - name: Build EDK2 Base Tools
+        run: |
+          git clone --recursive https://github.com/tianocore/edk2.git
+          cd edk2
+          git submodule update --init --recursive
+          . edksetup.sh
+          make -C BaseTools
+
+      - name: Build AppPkg EFI
+        run: |
+          export PACKAGES_PATH=`pwd`/edk2:`pwd`
+          export EDK2_LIBC_PATH=`pwd`
+          cd edk2
+          source edksetup.sh
+          build -a ${{ matrix.arch }} -b ${{ env.BUILD_TYPE }} -t ${{ env.COMPILER }} -p $EDK2_LIBC_PATH/StdLib/StdLib.dsc
+          build -a ${{ matrix.arch }} -b ${{ env.BUILD_TYPE }} -t ${{ env.COMPILER }} -p $EDK2_LIBC_PATH/AppPkg/AppPkg.dsc
