@@ -38,11 +38,7 @@
   strtold_px.c
   strtopx.c
 
-[Sources.ARM]
-  strtof.c
-  Ipf/strtold.c
-
-[Sources.AARCH64]
+[Sources.ARM, Sources.AARCH64, Sources.LOONGARCH64]
   strtof.c
   Ipf/strtold.c
 

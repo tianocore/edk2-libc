@@ -117,3 +117,4 @@
   MSFT:*_*_IA32_CC_FLAGS = /GL-
   GCC:*_*_IA32_CC_FLAGS = -fno-lto
   GCC:*_*_ARM_CC_FLAGS = -fno-lto
+  GCC:*_*_LOONGARCH64_CC_FLAGS = -fno-lto
