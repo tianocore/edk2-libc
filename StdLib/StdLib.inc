@@ -65,7 +65,7 @@
 
   LuaLib|AppPkg/Applications/Lua/LuaLib.inf           # Lua language library
 
-[LibraryClasses.ARM, LibraryClasses.AArch64]
+[LibraryClasses.ARM, LibraryClasses.AArch64, LibraryClasses.LOONGARCH64]
 !if "MSFT" not in $(FAMILY)
   NULL|MdePkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
 !endif

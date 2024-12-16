@@ -43,7 +43,7 @@
   Arm/__aeabi_dcmpun.c
   Arm/__aeabi_fcmpun.c
 
-[Sources.AARCH64]
+[Sources.AARCH64, Sources.LOONGARCH64]
   bits64/softfloat.c
   eqtf2.c
   getf2.c

@@ -24,7 +24,7 @@
     CopyMem by objcpy during build.
     For ARM/AARCH64, the memcpy function is provided by the CompilerIntrinsics library.
 **/
-#if !((defined(MDE_CPU_IPF) || defined(MDE_CPU_ARM) || defined(MDE_CPU_AARCH64)) && defined(__GNUC__))
+#if !((defined(MDE_CPU_IPF) || defined(MDE_CPU_ARM) || defined(MDE_CPU_AARCH64) || defined(MDE_CPU_LOONGARCH64)) && defined(__GNUC__))
 /** The memcpy function copies n characters from the object pointed to by s2
     into the object pointed to by s1.
 
