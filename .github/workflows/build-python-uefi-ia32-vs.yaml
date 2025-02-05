@@ -1,13 +1,12 @@
+# GitHub actions workflow to build python uefi in ia32 using VS2019
+#
+# Copyright (c) 2023-2024, Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
 name: Build Python Interpreter for UEFI in IA32 using VS2019
 
-on:
-  push:
-    branches:
-      - main  # Ou a branch que você deseja monitorar
-  pull_request:
-    branches:
-      - main  # Ou a branch que você deseja monitorar
-  workflow_dispatch:  # Adiciona a possibilidade de rodar manualmente via GitHub
+on: [push, pull_request]
 
 jobs:
   build:
@@ -73,5 +72,5 @@ jobs:
     - name: Upload build output as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: myUEFIPy-build-VS2019-output
+        name: myUEFIPy-build-VS2019-IA32-output
         path: edk2\myUEFIPy\**\*
