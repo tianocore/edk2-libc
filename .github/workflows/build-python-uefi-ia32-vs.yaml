@@ -1,4 +1,4 @@
-name: Build Python Interpreter for UEFI using VS2019
+name: Build Python Interpreter for UEFI in IA32 using VS2019
 
 on:
   push:
