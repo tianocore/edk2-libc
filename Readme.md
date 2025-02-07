@@ -32,7 +32,7 @@ package are listed in [Maintainers.txt](Maintainers.txt).
 * [EDK II](https://github.com/tianocore/tianocore.github.io/wiki/EDK-II)
 * [Getting Started with EDK II](https://github.com/tianocore/tianocore.github.io/wiki/Getting-Started-with-EDK-II)
 * [Mailing Lists](https://github.com/tianocore/tianocore.github.io/wiki/Mailing-Lists)
-* [TianoCore Bugzilla](https://bugzilla.tianocore.org)
+* [edk2-libc Issues](https://github.com/tianocore/edk2-libc/issues)
 * [How To Contribute](https://github.com/tianocore/tianocore.github.io/wiki/How-To-Contribute)
 * [Release Planning](https://github.com/tianocore/tianocore.github.io/wiki/EDK-II-Release-Planning)
 * [UDK2017](https://github.com/tianocore/edk2/releases/tag/vUDK2017)
