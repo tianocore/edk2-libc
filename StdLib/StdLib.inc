@@ -73,7 +73,7 @@
   NULL|StdLib/LibC/Softfloat/Softfloat.inf
 
   # Add support for GCC stack protector
-  NULL|MdePkg/Library/StackCheckLib/StackCheckLibStaticInit.inf
+  NULL|MdePkg/Library/StackCheckLib/StackCheckLib.inf
 
 [Components]
 # BaseLib and BaseMemoryLib need to be built with the /GL- switch when using the Microsoft
