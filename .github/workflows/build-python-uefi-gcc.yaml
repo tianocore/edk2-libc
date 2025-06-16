@@ -1,12 +1,12 @@
 # GitHub actions workflow to build python uefi using gcc
 #
-# Copyright (c) 2023-2024, Intel Corporation. All rights reserved.
+# Copyright (c) 2023-2025, Intel Corporation. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 name: Build Python Interpreter for UEFI with GCC
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
