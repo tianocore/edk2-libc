@@ -27,9 +27,10 @@
 #
 
 [Packages]
-  StdLib/StdLib.dec
   MdePkg/MdePkg.dec
-  MdeModulePkg/MdeModulePkg.dec 
+  MdeModulePkg/MdeModulePkg.dec
+  StdLib/StdLib.dec
+  AppPkg/AppPkg.dec
 
 [LibraryClasses]
   UefiLib
@@ -71,8 +72,8 @@
 #Python
   PyMod-$(PYTHON_VERSION)/Python/bltinmodule.c
   PyMod-$(PYTHON_VERSION)/Python/getcopyright.c
-  PyMod-$(PYTHON_VERSION)/Python/marshal.c 
-  PyMod-$(PYTHON_VERSION)/Python/random.c 
+  PyMod-$(PYTHON_VERSION)/Python/marshal.c
+  PyMod-$(PYTHON_VERSION)/Python/random.c
   PyMod-$(PYTHON_VERSION)/Python/fileutils.c
   PyMod-$(PYTHON_VERSION)/Python/pytime.c
   PyMod-$(PYTHON_VERSION)/Python/pylifecycle.c
@@ -82,7 +83,7 @@
   Python/_warnings.c
   Python/asdl.c
   Python/ast.c
-  Python/ceval.c   
+  Python/ceval.c
   Python/codecs.c
   Python/compile.c
   Python/dtoa.c
@@ -106,9 +107,9 @@
   Python/pyarena.c
   Python/pyctype.c
   Python/pyfpe.c
-  Python/pymath.c    
+  Python/pymath.c
   Python/pystrcmp.c
-  Python/pystrtod.c   
+  Python/pystrtod.c
   Python/Python-ast.c
   Python/pythonrun.c
   Python/structmember.c
@@ -122,7 +123,7 @@
   PyMod-$(PYTHON_VERSION)/Objects/memoryobject.c
   PyMod-$(PYTHON_VERSION)/Objects/object.c
   PyMod-$(PYTHON_VERSION)/Objects/unicodeobject.c
-  
+
   Objects/accu.c
   Objects/abstract.c
   Objects/boolobject.c
@@ -157,8 +158,8 @@
   Objects/typeobject.c
   Objects/unicodectype.c
   Objects/weakrefobject.c
-  Objects/namespaceobject.c 
-  
+  Objects/namespaceobject.c
+
   # Mandatory Modules -- These must always be built in.
   PyMod-$(PYTHON_VERSION)/Modules/config.c
   PyMod-$(PYTHON_VERSION)/Modules/edk2module.c
@@ -174,7 +175,7 @@
   Modules/getbuildinfo.c
   Programs/python.c
   Modules/hashtable.c
-  Modules/_stat.c 
+  Modules/_stat.c
   Modules/_opcode.c
   Modules/_sre.c
   Modules/_tracemalloc.c
@@ -205,7 +206,7 @@
   Modules/_blake2/blake2b_impl.c       #
   Modules/_blake2/blake2s_impl.c       #
   Modules/_sha3/sha3module.c           #
-  Modules/signalmodule.c               # 
+  Modules/signalmodule.c               #
   #Modules/socketmodule.c               #
   Modules/symtablemodule.c             #
   Modules/unicodedata.c                #
