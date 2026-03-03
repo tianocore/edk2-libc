@@ -56,10 +56,10 @@
 #else   //  _MSC_VER
 #define DBG_ENTER()               ///<  Display routine entry
 #define DBG_EXIT()                ///<  Display routine exit
-#define DBG_EXIT_DEC(Status)      ///<  Display routine exit with decimal value
-#define DBG_EXIT_HEX(Status)      ///<  Display routine exit with hex value
-#define DBG_EXIT_STATUS(Status)   ///<  Display routine exit with status value
-#define DBG_EXIT_TF(Status)       ///<  Display routine with TRUE/FALSE value
+#define DBG_EXIT_DEC(Status)      (void)Status /* suppress warning about unused variable */
+#define DBG_EXIT_HEX(Status)      (void)Status /* suppress warning about unused variable */
+#define DBG_EXIT_STATUS(Status)   (void)Status /* suppress warning about unused variable */
+#define DBG_EXIT_TF(Status)       (void)Status /* suppress warning about unused variable */
 #endif  //  _MSC_VER
 
 #define DIM(x)    ( sizeof ( x ) / sizeof ( x[0] ))   ///<  Compute the number of entries in an array
