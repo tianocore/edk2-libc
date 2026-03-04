@@ -333,7 +333,9 @@
   #pragma warning ( disable : 4306 )
 
   #define __STDC__            1
+  #ifndef __STDC_VERSION__
   #define __STDC_VERSION__    199409L
+  #endif
   #ifndef __STDC_HOSTED__
   #define __STDC_HOSTED__     1
   #endif
