@@ -14,6 +14,10 @@
   PACKAGE_VERSION                = 0.01
 
 
+[Includes]
+  Applications/Python/Python-3.6.8/Include
+
+
 [Guids]
   gAppPkgTokenSpaceGuid          = { 0xe7e1efa6, 0x7607, 0x4a78, { 0xa7, 0xdd, 0x43, 0xe4, 0xbd, 0x72, 0xc0, 0x99 }}
 
