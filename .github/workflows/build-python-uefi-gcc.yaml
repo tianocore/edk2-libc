@@ -14,10 +14,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.x'
 
@@ -63,7 +63,7 @@ jobs:
         ls -R edk2/myUEFIPy
 
     - name: Upload build output as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4.5.0
       with:
         name: myUEFIPy-build-gcc-output
         path: edk2/myUEFIPy/**/*
