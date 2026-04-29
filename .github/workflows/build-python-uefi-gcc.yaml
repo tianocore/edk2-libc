@@ -28,14 +28,14 @@ jobs:
 
     - name: Clone EDK2
       run: |
-        git clone https://github.com/tianocore/edk2.git
+        git clone --recursive https://github.com/tianocore/edk2.git
         cd edk2
-        git submodule update --init
+        git submodule update --init --recursive
 
     - name: Build EDK2 Base Tools
       run: |
         cd edk2
-        . edksetup.sh
+        source edksetup.sh
         make -C BaseTools
 
     - name: Run srcprep.py
@@ -45,18 +45,18 @@ jobs:
 
     - name: Build Python UEFI
       run: |
-        export PACKAGES_PATH=`pwd`/edk2:`pwd`:
+        export PACKAGES_PATH=`pwd`/edk2:`pwd`
         export EDK2_LIBC_PATH=`pwd`
         cd edk2
-        . edksetup.sh
-        build -t GCC5 -a X64 -b RELEASE -p $EDK2_LIBC_PATH/AppPkg/AppPkg.dsc -D BUILD_PYTHON368
+        source edksetup.sh
+        build -t GCC -a X64 -b RELEASE -p $EDK2_LIBC_PATH/AppPkg/AppPkg.dsc -D BUILD_PYTHON368
 
     - name: Create PyUEFI package
       run: |
         export WORKSPACE=`pwd`/edk2
         echo WORKSPACE is $WORKSPACE
         export EDK2_LIBC_PATH=`pwd`
-        . AppPkg/Applications/Python/Python-3.6.8/create_python_pkg.sh GCC5 RELEASE X64 myUEFIPy
+        source AppPkg/Applications/Python/Python-3.6.8/create_python_pkg.sh GCC RELEASE X64 myUEFIPy
 
     - name: List build artifacts
       run: |
