@@ -5,7 +5,8 @@
 
 name: Build Project for AppPkg EFI with GCC
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
 
 env:
   BUILD_TYPE: RELEASE
