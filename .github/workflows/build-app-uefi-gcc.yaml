@@ -10,9 +10,9 @@ on:
 
 env:
   BUILD_TYPE: RELEASE
-  COMPILER: GCC5
-  GCC5_AARCH64_PREFIX: aarch64-linux-gnu-
-  GCC5_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
+  COMPILER: GCC
+  GCC_AARCH64_PREFIX: aarch64-linux-gnu-
+  GCC_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
 
 jobs:
   build:
@@ -47,7 +47,7 @@ jobs:
           fi
 
       - name: Download and Install loongarch64 toolchain
-        if: matrix.arch == 'loongarch64'
+        if: matrix.arch == 'LOONGARCH64'
         run: |
           curl -L -O https://github.com/loongson/build-tools/releases/download/2024.11.01/x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
           tar -xJf x86_64-cross-tools-loongarch64-binutils_2.43.1-gcc_14.2.0-glibc_2.40.tar.xz
