@@ -39,13 +39,6 @@ __RCSID("$NetBSD: flt_rounds.c,v 1.3 2006/02/25 00:58:35 wiz Exp $");
 #include <sys/types.h>
 //#include <ieeefp.h>
 
-static const int map[] = {
-  1,  /* round to nearest */
-  2,  /* round to positive infinity */
-  3,  /* round to negative infinity */
-  0   /* round to zero */
-};
-
 /*
  * Return the current FP rounding mode
  *
@@ -55,8 +48,6 @@ static const int map[] = {
  *  2 - round to positive infinity
  *  3 - round to negative infinity
  *
- * ok all we need to do is get the current FP rounding mode
- * index our map table and return the appropriate value.
  *
  * HOWEVER:
  * The ARM FPA codes the rounding mode into the actual FP instructions
