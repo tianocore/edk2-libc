@@ -402,7 +402,6 @@ da_ShellIoctl(
     if( cmd == (ULONGN)FIOSETIME) {
       struct timeval  *TV;
       EFI_TIME        *ET;
-      int              mod = 0;
 
       TV = va_arg(argp, struct timeval*);
       if(TV[0].tv_sec != 0) {
@@ -411,7 +410,6 @@ da_ShellIoctl(
           (void) memcpy(&FileInfo->LastAccessTime, ET, sizeof(EFI_TIME));
           FileInfo->LastAccessTime.Nanosecond = TV[0].tv_usec * 1000;
           free(ET);
-          ++mod;
         }
       }
       if(TV[1].tv_sec != 0) {
@@ -420,7 +418,6 @@ da_ShellIoctl(
           (void) memcpy(&FileInfo->ModificationTime, ET, sizeof(EFI_TIME));
           FileInfo->ModificationTime.Nanosecond = TV[1].tv_usec * 1000;
           free(ET);
-          ++mod;
         }
       }
       /* Set access and modification times */
