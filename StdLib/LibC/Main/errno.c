@@ -14,6 +14,12 @@
 int             errno     = 0;
 RETURN_STATUS   EFIerrno  = RETURN_SUCCESS;
 
+#if defined(__GNUC__) || defined(__clang__)
+#define GLOBAL_USED  __attribute__((used))
+#else
+#define GLOBAL_USED
+#endif
+
 // This is required to keep VC++ happy if you use floating-point
-int _fltused  = 1;
-int __sse2_available = 0;   ///< Used by ftol2_sse
+int  GLOBAL_USED  _fltused  = 1;
+int  GLOBAL_USED  __sse2_available = 0;   ///< Used by ftol2_sse
