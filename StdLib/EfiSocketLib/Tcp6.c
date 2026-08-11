@@ -1,7 +1,7 @@
 /** @file
   Implement the TCP6 driver support for the socket layer.
 
-  Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2011 - 2026, Intel Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 
@@ -21,6 +21,7 @@
 **/
 
 #include "Socket.h"
+#include <netinet/tcp.h>
 
 
 /**
@@ -72,6 +73,30 @@ VOID EFIAPI
 EslTcp6ListenComplete (
   IN EFI_EVENT Event,
   IN VOID *pPort // IN ESL_PORT * pPort
+  );
+
+
+/**
+  Set a TCP6 socket option.
+
+  This routine handles protocol-level option requests for TCPv6 sockets.
+  Currently only IPPROTO_TCP / TCP_NODELAY is supported.
+
+  @param [in] pSocket       Address of an ::ESL_SOCKET structure.
+  @param [in] OptionName    Name of the option to set.
+  @param [in] pOptionValue  Buffer containing the option value.
+  @param [in] OptionLength  Length of the buffer in bytes.
+
+  @retval EFI_SUCCESS           Option successfully set.
+  @retval EFI_INVALID_PARAMETER Unrecognised option or bad length.
+
+ **/
+EFI_STATUS
+EslTcp6OptionSet (
+  IN ESL_SOCKET * pSocket,
+  IN int OptionName,
+  IN CONST void * pOptionValue,
+  IN socklen_t OptionLength
   );
 
 
@@ -513,6 +538,7 @@ EslTcp6ConnectStart (
     pTcp6->ConfigData.AccessPoint.ActiveFlag = TRUE;
     pTcp6->ConfigData.TrafficClass = 0;
     pTcp6->ConfigData.HopLimit = 255;
+    pTcp6->ConfigData.ControlOption = pSocket->bNoDelay ? &pTcp6->Option : NULL;
     pTcp6Protocol = pPort->pProtocol.TCPv6;
     Status = pTcp6Protocol->Configure ( pTcp6Protocol,
                                         &pTcp6->ConfigData );
@@ -703,6 +729,7 @@ EslTcp6Listen (
         //  Configure the port
         //
         pTcp6Protocol = pPort->pProtocol.TCPv6;
+        pTcp6->ConfigData.ControlOption = pSocket->bNoDelay ? &pTcp6->Option : NULL;
         Status = pTcp6Protocol->Configure ( pTcp6Protocol,
                                             &pTcp6->ConfigData );
         if ( EFI_ERROR ( Status )) {
@@ -1372,6 +1399,7 @@ EslTcp6PortAllocate (
     pAccessPoint->ActiveFlag = FALSE;
     pTcp6->ConfigData.TrafficClass = 0;
     pTcp6->ConfigData.HopLimit = 255;
+    pTcp6->Option.EnableNagle = (BOOLEAN)( !pSocket->bNoDelay );
     break;
   }
 
@@ -2552,6 +2580,78 @@ EslTcp6VerifyLocalIpAddress (
 
 
 /**
+  Set a TCP6 socket option.
+
+  This routine handles protocol-level option requests for TCPv6 sockets.
+  Currently only IPPROTO_TCP / TCP_NODELAY is supported.
+
+  @param [in] pSocket       Address of an ::ESL_SOCKET structure.
+  @param [in] OptionName    Name of the option to set.
+  @param [in] pOptionValue  Buffer containing the option value.
+  @param [in] OptionLength  Length of the buffer in bytes.
+
+  @retval EFI_SUCCESS           Option successfully set.
+  @retval EFI_INVALID_PARAMETER Unrecognised option or bad length.
+
+ **/
+EFI_STATUS
+EslTcp6OptionSet (
+  IN ESL_SOCKET * pSocket,
+  IN int OptionName,
+  IN CONST void * pOptionValue,
+  IN socklen_t OptionLength
+  )
+{
+  ESL_PORT * pPort;
+  ESL_TCP6_CONTEXT * pTcp6;
+
+  DBG_ENTER ( );
+
+  //
+  //  Validate the option
+  //
+  if ( TCP_NODELAY != OptionName ) {
+    DEBUG (( DEBUG_OPTION,
+              "ERROR - EslTcp6OptionSet: unsupported option %d\r\n",
+              OptionName ));
+    pSocket->errno = ENOPROTOOPT;
+    DBG_EXIT_STATUS ( EFI_UNSUPPORTED );
+    return EFI_UNSUPPORTED;
+  }
+  if ( OptionLength < sizeof ( int )) {
+    DEBUG (( DEBUG_OPTION,
+              "ERROR - EslTcp6OptionSet: option %d length %d too small\r\n",
+              OptionName,
+              OptionLength ));
+    pSocket->errno = EINVAL;
+    DBG_EXIT_STATUS ( EFI_INVALID_PARAMETER );
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  //  Store the no-delay preference on the socket so port-allocate can pick
+  //  it up even when no ports exist yet.
+  //
+  pSocket->bNoDelay = (BOOLEAN)( 0 != *(CONST int *)pOptionValue );
+
+  //
+  //  Update any ports that are already allocated (e.g. after bind but before
+  //  connect / listen).
+  //
+  pPort = pSocket->pPortList;
+  while ( NULL != pPort ) {
+    pTcp6 = &pPort->Context.Tcp6;
+    pTcp6->Option.EnableNagle = (BOOLEAN)( !pSocket->bNoDelay );
+    pPort = pPort->pLinkSocket;
+  }
+
+  pSocket->errno = 0;
+  DBG_EXIT_STATUS ( EFI_SUCCESS );
+  return EFI_SUCCESS;
+}
+
+
+/**
   Interface between the socket layer and the network specific
   code that supports SOCK_STREAM and SOCK_SEQPACKET sockets
   over TCPv6.
@@ -2577,7 +2677,7 @@ CONST ESL_PROTOCOL_API cEslTcp6Api = {
   EslTcp6LocalAddressSet,
   EslTcp6Listen,
   NULL,   //  OptionGet
-  NULL,   //  OptionSet
+  EslTcp6OptionSet,   //  OptionSet
   EslTcp6PacketFree,
   EslTcp6PortAllocate,
   EslTcp6PortClose,

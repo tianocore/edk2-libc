@@ -1,7 +1,7 @@
 /** @file
   Implement the TCP4 driver support for the socket layer.
 
-  Copyright (c) 2011 - 2015, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2011 - 2026, Intel Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 
@@ -21,6 +21,7 @@
 **/
 
 #include "Socket.h"
+#include <netinet/tcp.h>
 
 
 /**
@@ -72,6 +73,30 @@ VOID EFIAPI
 EslTcp4ListenComplete (
   IN EFI_EVENT Event,
   IN VOID *contet
+  );
+
+
+/**
+  Set a TCP4 socket option.
+
+  This routine handles protocol-level option requests for TCPv4 sockets.
+  Currently only IPPROTO_TCP / TCP_NODELAY is supported.
+
+  @param [in] pSocket       Address of an ::ESL_SOCKET structure.
+  @param [in] OptionName    Name of the option to set.
+  @param [in] pOptionValue  Buffer containing the option value.
+  @param [in] OptionLength  Length of the buffer in bytes.
+
+  @retval EFI_SUCCESS           Option successfully set.
+  @retval EFI_INVALID_PARAMETER Unrecognised option or bad length.
+
+ **/
+EFI_STATUS
+EslTcp4OptionSet (
+  IN ESL_SOCKET * pSocket,
+  IN int OptionName,
+  IN CONST void * pOptionValue,
+  IN socklen_t OptionLength
   );
 
 
@@ -494,6 +519,7 @@ EslTcp4ConnectStart (
     pTcp4 = &pPort->Context.Tcp4;
     pTcp4->ConfigData.AccessPoint.ActiveFlag = TRUE;
     pTcp4->ConfigData.TimeToLive = 255;
+    pTcp4->ConfigData.ControlOption = pSocket->bNoDelay ? &pTcp4->Option : NULL;
     pTcp4Protocol = pPort->pProtocol.TCPv4;
     Status = pTcp4Protocol->Configure ( pTcp4Protocol,
                                         &pTcp4->ConfigData );
@@ -672,6 +698,7 @@ EslTcp4Listen (
         //  Configure the port
         //
         pTcp4Protocol = pPort->pProtocol.TCPv4;
+        pTcp4->ConfigData.ControlOption = pSocket->bNoDelay ? &pTcp4->Option : NULL;
         Status = pTcp4Protocol->Configure ( pTcp4Protocol,
                                             &pTcp4->ConfigData );
         if ( EFI_ERROR ( Status )) {
@@ -1320,6 +1347,7 @@ EslTcp4PortAllocate (
     pAccessPoint = &pPort->Context.Tcp4.ConfigData.AccessPoint;
     pAccessPoint->ActiveFlag = FALSE;
     pTcp4->ConfigData.TimeToLive = 255;
+    pTcp4->Option.EnableNagle = (BOOLEAN)( !pSocket->bNoDelay );
     break;
   }
 
@@ -2388,6 +2416,78 @@ EslTcp4VerifyLocalIpAddress (
 
 
 /**
+  Set a TCP4 socket option.
+
+  This routine handles protocol-level option requests for TCPv4 sockets.
+  Currently only IPPROTO_TCP / TCP_NODELAY is supported.
+
+  @param [in] pSocket       Address of an ::ESL_SOCKET structure.
+  @param [in] OptionName    Name of the option to set.
+  @param [in] pOptionValue  Buffer containing the option value.
+  @param [in] OptionLength  Length of the buffer in bytes.
+
+  @retval EFI_SUCCESS           Option successfully set.
+  @retval EFI_INVALID_PARAMETER Unrecognised option or bad length.
+
+ **/
+EFI_STATUS
+EslTcp4OptionSet (
+  IN ESL_SOCKET * pSocket,
+  IN int OptionName,
+  IN CONST void * pOptionValue,
+  IN socklen_t OptionLength
+  )
+{
+  ESL_PORT * pPort;
+  ESL_TCP4_CONTEXT * pTcp4;
+
+  DBG_ENTER ( );
+
+  //
+  //  Validate the option
+  //
+  if ( TCP_NODELAY != OptionName ) {
+    DEBUG (( DEBUG_OPTION,
+              "ERROR - EslTcp4OptionSet: unsupported option %d\r\n",
+              OptionName ));
+    pSocket->errno = ENOPROTOOPT;
+    DBG_EXIT_STATUS ( EFI_UNSUPPORTED );
+    return EFI_UNSUPPORTED;
+  }
+  if ( OptionLength < sizeof ( int )) {
+    DEBUG (( DEBUG_OPTION,
+              "ERROR - EslTcp4OptionSet: option %d length %d too small\r\n",
+              OptionName,
+              OptionLength ));
+    pSocket->errno = EINVAL;
+    DBG_EXIT_STATUS ( EFI_INVALID_PARAMETER );
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  //  Store the no-delay preference on the socket so port-allocate can pick
+  //  it up even when no ports exist yet.
+  //
+  pSocket->bNoDelay = (BOOLEAN)( 0 != *(CONST int *)pOptionValue );
+
+  //
+  //  Update any ports that are already allocated (e.g. after bind but before
+  //  connect / listen).
+  //
+  pPort = pSocket->pPortList;
+  while ( NULL != pPort ) {
+    pTcp4 = &pPort->Context.Tcp4;
+    pTcp4->Option.EnableNagle = (BOOLEAN)( !pSocket->bNoDelay );
+    pPort = pPort->pLinkSocket;
+  }
+
+  pSocket->errno = 0;
+  DBG_EXIT_STATUS ( EFI_SUCCESS );
+  return EFI_SUCCESS;
+}
+
+
+/**
   Interface between the socket layer and the network specific
   code that supports SOCK_STREAM and SOCK_SEQPACKET sockets
   over TCPv4.
@@ -2413,7 +2513,7 @@ CONST ESL_PROTOCOL_API cEslTcp4Api = {
   EslTcp4LocalAddressSet,
   EslTcp4Listen,
   NULL,   //  OptionGet
-  NULL,   //  OptionSet
+  EslTcp4OptionSet,   //  OptionSet
   EslTcp4PacketFree,
   EslTcp4PortAllocate,
   EslTcp4PortClose,
