@@ -1,7 +1,7 @@
 /** @file
   Definitions for the Socket layer driver.
 
-  Copyright (c) 2011, Intel Corporation. All rights reserved.
+  Copyright (c) 2011 - 2026, Intel Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -1005,6 +1005,7 @@ typedef struct _ESL_SOCKET {
   //
   BOOLEAN bIncludeHeader;       ///<  TRUE if including the IP header
   BOOLEAN bListenCalled;        ///<  TRUE if listen was successfully called
+  BOOLEAN bNoDelay;             ///<  TRUE if Nagle algorithm is disabled (TCP_NODELAY)
   BOOLEAN bOobInLine;           ///<  TRUE if out-of-band messages are to be received inline with normal data
   BOOLEAN bReUseAddr;           ///<  TRUE if using same address is allowed
 
