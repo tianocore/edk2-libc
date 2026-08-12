@@ -59,15 +59,17 @@
       char        * asctime   (const struct tm *timeptr);
       char        * ctime     (const time_t *timer);
       struct tm   * gmtime    (const time_t *timer);
+      struct tm   * gmtime_r   (const time_t *timer, struct tm *result);
       time_t        timegm    (struct tm*);
       struct tm   * localtime (const time_t *timer);
+      struct tm   * localtime_r(const time_t *timer, struct tm *result);
       size_t        strftime  (char * __restrict s, size_t maxsize,
                                const char * __restrict format,
                                const struct tm * __restrict timeptr);
       char        * strptime  (const char *, const char * format, struct tm*);
     @endverbatim
 
-    Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2010 - 2026, Intel Corporation. All rights reserved.<BR>
     This program and the accompanying materials are licensed and made available under
     the terms and conditions of the BSD License that accompanies this distribution.
     The full text of the license may be found at
@@ -250,6 +252,17 @@ char * ctime(const time_t *timer);
 **/
 struct tm  * gmtime(const time_t *timer);
 
+/** The gmtime_r function converts the calendar time pointed to by timer into a
+    broken-down time, expressed as UTC, stored in the structure pointed to by result.
+    This is the reentrant version of gmtime.
+
+    @param[in]   timer    Pointer to a calendar time value to convert.
+    @param[out]  result   Pointer to a struct tm in which to store the result.
+
+    @return   gmtime_r returns result, or a null pointer if timer or result is NULL.
+**/
+struct tm  * gmtime_r(const time_t *timer, struct tm *result);
+
 /** The timegm function is the opposite of gmtime.
 
     @param[in]  tm    Pointer to a broken-down time to convert into a
@@ -269,6 +282,17 @@ time_t timegm(struct tm*);
               local time.
 **/
 struct tm  * localtime(const time_t *timer);
+
+/** The localtime_r function converts the calendar time pointed to by timer into a
+    broken-down time, expressed as local time, stored in the structure pointed to by result.
+    This is the reentrant version of localtime.
+
+    @param[in]   timer    Pointer to a calendar time value to be converted.
+    @param[out]  result   Pointer to a struct tm in which to store the result.
+
+    @return   localtime_r returns result, or a null pointer if timer or result is NULL.
+**/
+struct tm  * localtime_r(const time_t *timer, struct tm *result);
 
 /** The strftime function places characters into the array pointed to by s as
     controlled by the string pointed to by format. The format shall be a
