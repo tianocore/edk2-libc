@@ -90,6 +90,9 @@
 [Sources.AARCH64]
   Main/Arm/flt_rounds.c
 
+[Sources.RISCV64]
+  Main/RiscV64/flt_rounds.c
+
 [Packages]
   StdLib/StdLib.dec
   StdLibPrivateInternalFiles/DoNotUse.dec
