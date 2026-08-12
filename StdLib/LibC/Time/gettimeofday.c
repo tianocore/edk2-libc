@@ -1,7 +1,7 @@
 /** @file 
   gettimeofday implementation
 
-  Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2011 - 2026, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials are licensed and made available under
   the terms and conditions of the BSD License that accompanies this distribution.
   The full text of the license may be found at
@@ -48,20 +48,38 @@
 #include <sys/EfiCdefs.h>
 #include <sys/time.h>
 #include <time.h>
+#include <errno.h>
+#include <Uefi.h>
+#include <Library/UefiRuntimeServicesTableLib.h>
 
 
 #ifdef HAVE_GETTIMEOFDAY
 /*
- * Simple gettimeofday that only returns seconds.
+ * gettimeofday returning seconds and microseconds from a single EFI GetTime call.
  */
 int 
 gettimeofday (struct timeval *tp, void *ignore)
 {
-  time_t t;
+  EFI_TIME    ET;
+  EFI_STATUS  Status;
+  struct tm   BT;
 
-  t = time(NULL);
-  tp->tv_sec  = t;
-  tp->tv_usec = 0;
+  (void)ignore; /* unused arg */
+
+  if (tp == NULL) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  Status = gRT->GetTime(&ET, NULL);
+  EFIerrno = Status;
+  if (EFI_ERROR(Status)) {
+    errno = EIO;
+    return -1;
+  }
+  Efi2Tm(&ET, &BT);
+  tp->tv_sec  = mktime(&BT);
+  tp->tv_usec = (LONG32)(ET.Nanosecond / 1000);
   return 0;
 }
 #endif
