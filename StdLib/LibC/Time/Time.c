@@ -1,7 +1,7 @@
 /**
   Definitions and Implementation for <time.h>.
 
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2026, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials are licensed and made available under
   the terms and conditions of the BSD License that accompanies this distribution.
   The full text of the license may be found at
@@ -711,6 +711,18 @@ gmtime(const time_t *timer)
   return &gMD->BDTime;
 }
 
+/**
+**/
+struct tm *
+gmtime_r(const time_t *timer, struct tm *result)
+{
+  if (timer == NULL || result == NULL) {
+    return NULL;
+  }
+  gmtsub(timer, 0L, result);
+  return result;
+}
+
 static void
 localsub(const time_t * const timep, const long   offset, struct tm * const tmp)
 {
@@ -762,4 +774,17 @@ localtime(const time_t *timer)
   tzset();
   localsub(timer, 0L, &gMD->BDTime);
   return &gMD->BDTime;
+}
+
+/**
+**/
+struct tm *
+localtime_r(const time_t *timer, struct tm *result)
+{
+  if (timer == NULL || result == NULL) {
+    return NULL;
+  }
+  tzset();
+  localsub(timer, 0L, result);
+  return result;
 }
