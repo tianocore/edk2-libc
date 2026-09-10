@@ -13,6 +13,7 @@ env:
   COMPILER: GCC
   GCC_AARCH64_PREFIX: aarch64-linux-gnu-
   GCC_LOONGARCH64_PREFIX: loongarch64-unknown-linux-gnu-
+  GCC_RISCV64_PREFIX: riscv64-linux-gnu-
 
 jobs:
   build:
@@ -20,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        arch: [X64, AARCH64, LOONGARCH64]
+        arch: [X64, AARCH64, LOONGARCH64, RISCV64]
         include:
           - arch: X64
             short: x64
@@ -31,6 +32,9 @@ jobs:
           - arch: LOONGARCH64
             short: loongarch64
             pkgs: null
+          - arch: RISCV64
+            short: rv64
+            pkgs: gcc-riscv64-linux-gnu
 
     steps:
       - name: Checkout repository
