@@ -36,18 +36,20 @@ IIO_NonCanonRead (
 {
   cIIO           *This;
   cFIFO          *InBuf;
-  struct termios *Termio;
+  //struct termios *Termio;
   ssize_t         NumRead;
-  cc_t            tioMin;
-  cc_t            tioTime;
-  UINT32          InputType;
+  //cc_t            tioMin;
+  //cc_t            tioTime;
+  //UINT32          InputType;
   wchar_t         InChar;     // Intermediate character buffer
 
   NumRead = -1;
   InChar  = 0;      // Initialize so compilers don't complain.
+
   This    = filp->devdata;
-  Termio  = &This->Termio;
+  //Termio  = &This->Termio;
   InBuf   = This->InBuf;
+#if 0
   tioMin  = Termio->c_cc[VMIN];
   tioTime = Termio->c_cc[VTIME];
 
@@ -69,6 +71,7 @@ IIO_NonCanonRead (
   if(tioMin   != 0)     InputType = 2;
   if(tioTime  != 0)   ++InputType;
   //switch(InputType) {
+#endif
   //  case 0:
       if(InBuf->IsEmpty(InBuf)) {
         NumRead = filp->f_ops->fo_read(filp, &filp->f_offset, sizeof(wchar_t), &InChar);

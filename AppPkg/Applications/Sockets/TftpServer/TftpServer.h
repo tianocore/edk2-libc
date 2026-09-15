@@ -49,10 +49,10 @@
 #else   //  _MSC_VER
 #define DBG_ENTER()
 #define DBG_EXIT()
-#define DBG_EXIT_DEC(Status)
-#define DBG_EXIT_HEX(Status)
-#define DBG_EXIT_STATUS(Status)
-#define DBG_EXIT_TF(Status)
+#define DBG_EXIT_DEC(Status)    (void)Status /* suppress warning about unused variable */
+#define DBG_EXIT_HEX(Status)    (void)Status /* suppress warning about unused variable */
+#define DBG_EXIT_STATUS(Status) (void)Status /* suppress warning about unused variable */
+#define DBG_EXIT_TF(Status)     (void)Status /* suppress warning about unused variable */
 #endif  //  _MSC_VER
 
 #define DIM(x)    ( sizeof ( x ) / sizeof ( x[0] ))   ///<  Compute the number of entries in an array
