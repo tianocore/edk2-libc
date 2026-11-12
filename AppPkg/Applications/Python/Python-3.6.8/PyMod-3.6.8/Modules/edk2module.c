@@ -4480,6 +4480,16 @@ posix_writemem_dword(PyObject *self, PyObject *args)
   return Py_None;
 }
 
+PyDoc_STRVAR(efi_GetSystemTable__doc__,
+"GetSystemTable() -> int\n\
+Return the address of the EFI System Table.");
+
+static PyObject *
+edk2_GetSystemTable(PyObject *self, PyObject *noargs)
+{
+  return PyLong_FromUnsignedLongLong((UINT64)(UINTN)gST);
+}
+
 PyDoc_STRVAR(MiscRT_GetVariable__doc__,
 "(Status, Attributes, Data, DataSize) = GetVariable(VariableName, GUID, DataSize)\n\n\
 Returns the value of a variable.");
@@ -4909,6 +4919,7 @@ static PyMethodDef edk2_methods[] = {
     {"allocphysmem",        posix_allocphysmem,          METH_VARARGS, efi_allocphysmem__doc__},
     {"cpuid",               edk2_cpuid,                 METH_VARARGS, efi_cpuid__doc__},
     {"cpuid_ex",            edk2_cpuid_ex,              METH_VARARGS, efi_cpuid_ex__doc__},
+    {"GetSystemTable",      edk2_GetSystemTable,        METH_NOARGS,  efi_GetSystemTable__doc__},
     {"GetVariable",         MiscRT_GetVariable,          METH_VARARGS, MiscRT_GetVariable__doc__},
     {"GetNextVariableName", MiscRT_GetNextVariableName,  METH_VARARGS, MiscRT_GetNextVariableName__doc__},
     {"SetVariable",         MiscRT_SetVariable,          METH_VARARGS, MiscRT_SetVariable__doc__},
