@@ -29,6 +29,7 @@
 #include  <Library/UefiRuntimeServicesTableLib.h>
 #include  <Library/UefiBootServicesTableLib.h>
 #include  <Protocol/MpService.h>
+#include  <Protocol/MemoryAttribute.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -4490,6 +4491,39 @@ edk2_GetSystemTable(PyObject *self, PyObject *noargs)
   return PyLong_FromUnsignedLongLong((UINT64)(UINTN)gST);
 }
 
+PyDoc_STRVAR(efi_GetMemoryAttributes__doc__,
+"(Status, Attributes) = GetMemoryAttributes(BaseAddress, Length)\n\n\
+Returns the attributes of a page-aligned memory range via EFI_MEMORY_ATTRIBUTE_PROTOCOL.");
+
+static
+PyObject *
+edk2_GetMemoryAttributes(PyObject *self, PyObject *args)
+{
+  static EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttribute = NULL;
+  UINT64                                BaseAddress;
+  UINT64                                Length;
+  UINT64                                Attributes = 0;
+  EFI_STATUS                            Status;
+
+  if (!PyArg_ParseTuple(args, "KK", &BaseAddress, &Length)) {
+    return NULL;
+  }
+
+  if (MemoryAttribute == NULL) {
+    Status = gBS->LocateProtocol(&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&MemoryAttribute);
+    if (EFI_ERROR(Status)) {
+      MemoryAttribute = NULL;
+      return Py_BuildValue("(IK)", (UINT32)Status, Attributes);
+    }
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  Status = MemoryAttribute->GetMemoryAttributes(MemoryAttribute, BaseAddress, Length, &Attributes);
+  Py_END_ALLOW_THREADS
+
+  return Py_BuildValue("(IK)", (UINT32)Status, Attributes);
+}
+
 PyDoc_STRVAR(MiscRT_GetVariable__doc__,
 "(Status, Attributes, Data, DataSize) = GetVariable(VariableName, GUID, DataSize)\n\n\
 Returns the value of a variable.");
@@ -4920,6 +4954,7 @@ static PyMethodDef edk2_methods[] = {
     {"cpuid",               edk2_cpuid,                 METH_VARARGS, efi_cpuid__doc__},
     {"cpuid_ex",            edk2_cpuid_ex,              METH_VARARGS, efi_cpuid_ex__doc__},
     {"GetSystemTable",      edk2_GetSystemTable,        METH_NOARGS,  efi_GetSystemTable__doc__},
+    {"GetMemoryAttributes", edk2_GetMemoryAttributes,   METH_VARARGS, efi_GetMemoryAttributes__doc__},
     {"GetVariable",         MiscRT_GetVariable,          METH_VARARGS, MiscRT_GetVariable__doc__},
     {"GetNextVariableName", MiscRT_GetNextVariableName,  METH_VARARGS, MiscRT_GetNextVariableName__doc__},
     {"SetVariable",         MiscRT_SetVariable,          METH_VARARGS, MiscRT_SetVariable__doc__},
