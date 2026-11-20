@@ -29,6 +29,7 @@
 #include  <Library/UefiRuntimeServicesTableLib.h>
 #include  <Library/UefiBootServicesTableLib.h>
 #include  <Protocol/MpService.h>
+#include  <Protocol/MemoryAttribute.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -4480,6 +4481,105 @@ posix_writemem_dword(PyObject *self, PyObject *args)
   return Py_None;
 }
 
+PyDoc_STRVAR(efi_GetSystemTable__doc__,
+"GetSystemTable() -> int\n\
+Return the address of the EFI System Table.");
+
+static PyObject *
+edk2_GetSystemTable(PyObject *self, PyObject *noargs)
+{
+  return PyLong_FromUnsignedLongLong((UINT64)(UINTN)gST);
+}
+
+PyDoc_STRVAR(efi_GetMemoryAttributes__doc__,
+"(Status, Attributes) = GetMemoryAttributes(BaseAddress, Length)\n\n\
+Returns the attributes of a page-aligned memory range via EFI_MEMORY_ATTRIBUTE_PROTOCOL.");
+
+static
+PyObject *
+edk2_GetMemoryAttributes(PyObject *self, PyObject *args)
+{
+  static EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttribute = NULL;
+  UINT64                                BaseAddress;
+  UINT64                                Length;
+  UINT64                                Attributes = 0;
+  EFI_STATUS                            Status;
+
+  if (!PyArg_ParseTuple(args, "KK", &BaseAddress, &Length)) {
+    return NULL;
+  }
+
+  if (MemoryAttribute == NULL) {
+    Status = gBS->LocateProtocol(&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&MemoryAttribute);
+    if (EFI_ERROR(Status)) {
+      MemoryAttribute = NULL;
+      return Py_BuildValue("(IK)", (UINT32)Status, Attributes);
+    }
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  Status = MemoryAttribute->GetMemoryAttributes(MemoryAttribute, BaseAddress, Length, &Attributes);
+  Py_END_ALLOW_THREADS
+
+  return Py_BuildValue("(IK)", (UINT32)Status, Attributes);
+}
+
+PyDoc_STRVAR(efi_GetMemoryMap__doc__,
+"(Status, Entries) = GetMemoryMap()\n\n\
+Returns the UEFI memory map as a list of (Type, PhysicalStart, NumberOfPages, Attribute) tuples.");
+
+static
+PyObject *
+edk2_GetMemoryMap(PyObject *self, PyObject *noargs)
+{
+  EFI_MEMORY_DESCRIPTOR  *MemoryMap = NULL;
+  EFI_MEMORY_DESCRIPTOR  *Descriptor;
+  UINTN                  MemoryMapSize = 0;
+  UINTN                  MapKey;
+  UINTN                  DescriptorSize = 0;
+  UINT32                 DescriptorVersion;
+  UINTN                  Offset;
+  EFI_STATUS             Status;
+  PyObject               *Entries;
+  PyObject               *Entry;
+
+  Status = gBS->GetMemoryMap(&MemoryMapSize, NULL, &MapKey, &DescriptorSize, &DescriptorVersion);
+  while (Status == EFI_BUFFER_TOO_SMALL) {
+    free(MemoryMap);
+    // Allocating the buffer can itself grow the map, so leave room for a few more descriptors.
+    MemoryMapSize += 4 * DescriptorSize;
+    MemoryMap = malloc(MemoryMapSize);
+    if (MemoryMap == NULL) {
+      return PyErr_NoMemory();
+    }
+    Status = gBS->GetMemoryMap(&MemoryMapSize, MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+  }
+
+  Entries = PyList_New(0);
+  if (Entries == NULL) {
+    free(MemoryMap);
+    return NULL;
+  }
+
+  if (!EFI_ERROR(Status) && (DescriptorSize != 0)) {
+    for (Offset = 0; Offset + DescriptorSize <= MemoryMapSize; Offset += DescriptorSize) {
+      Descriptor = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + Offset);
+      Entry = Py_BuildValue("(IKKK)", Descriptor->Type, Descriptor->PhysicalStart,
+                            Descriptor->NumberOfPages, Descriptor->Attribute);
+      if ((Entry == NULL) || (PyList_Append(Entries, Entry) != 0)) {
+        Py_XDECREF(Entry);
+        Py_DECREF(Entries);
+        free(MemoryMap);
+        return NULL;
+      }
+      Py_DECREF(Entry);
+    }
+  }
+
+  free(MemoryMap);
+  return Py_BuildValue("(IN)", (UINT32)Status, Entries);
+}
+
 PyDoc_STRVAR(MiscRT_GetVariable__doc__,
 "(Status, Attributes, Data, DataSize) = GetVariable(VariableName, GUID, DataSize)\n\n\
 Returns the value of a variable.");
@@ -4520,41 +4620,92 @@ MiscRT_GetVariable(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(MiscRT_GetNextVariableName__doc__,
-"(Status, VariableNameSize, VariableName, VendorGuid) = GetNextVariableName(NameSize, VariableName, GUID)\n\n\
-Enumerates the current variable names.");
+"(Status, VariableName, VariableNameSize, VendorGuid) = GetNextVariableName(NameSize, VariableName, GUID)\n\n\
+Enumerates the current variable names.\n\
+NameSize is the size in bytes of the name buffer to use. VariableName is the\n\
+previous name as UTF-16LE bytes and GUID is the previous vendor GUID as 16\n\
+bytes (uuid.bytes_le). On EFI_BUFFER_TOO_SMALL, VariableNameSize is the\n\
+required buffer size.");
 
 static
 PyObject *
 MiscRT_GetNextVariableName(PyObject *self, PyObject *args)
 {
   UINT64        NameSize;
-  CHAR16       *VariableName, *NameIn;
-  UINT32        GuidSize, VariableNameSize, i;
+  UINTN         BufferSize;
+  UINTN         VariableNameSize;
+  UINTN         NameLength;
+  CHAR16       *VariableName;
+  const char   *NameIn;
+  Py_ssize_t    NameInSize;
+  const char   *GuidIn;
+  Py_ssize_t    GuidSize;
   EFI_GUID      VendorGuid;
   EFI_STATUS    Status;
-  const char   *GuidIn;
-  char         *VendorGuidPtr, *GuidOut[37];
+  PyObject     *NameOut;
+  PyObject     *Result;
+  int           ByteOrder;
+  char          GuidOut[37];
 
-  if(!PyArg_ParseTuple(args, "Ky#s#", &NameSize, &NameIn, &VariableNameSize, &GuidIn, &GuidSize))
+  if(!PyArg_ParseTuple(args, "Ky#s#", &NameSize, &NameIn, &NameInSize, &GuidIn, &GuidSize))
   {
     return NULL;
   }
 
-  VendorGuidPtr = (char *)&VendorGuid;
-  for (i=0; i<sizeof(VendorGuid); i++)
-    VendorGuidPtr[i] = GuidIn[i];
+  if (GuidSize != sizeof(EFI_GUID)) {
+    PyErr_SetString(PyExc_ValueError, "GUID must be 16 bytes");
+    return NULL;
+  }
+  memcpy(&VendorGuid, GuidIn, sizeof(VendorGuid));
 
-  for (i=0; i<NameSize && NameIn[i] != (CHAR16)0; i++)
-    VariableName[i] = NameIn[i];
-  VariableName[i] = NameIn[i];
+  if (NameSize > (UINT64)(PY_SSIZE_T_MAX - sizeof(CHAR16))) {
+    PyErr_SetString(PyExc_OverflowError, "NameSize is too large");
+    return NULL;
+  }
 
+  //
+  // The buffer must be at least NameSize bytes, must hold the caller's name
+  // plus a terminating CHAR16, and must be a whole number of CHAR16s.
+  //
+  BufferSize = (UINTN)NameSize;
+  if (BufferSize < (UINTN)NameInSize + sizeof(CHAR16)) {
+    BufferSize = (UINTN)NameInSize + sizeof(CHAR16);
+  }
+  BufferSize = (BufferSize + 1) & ~(UINTN)1;
+
+  VariableName = calloc(1, BufferSize);
+  if (VariableName == NULL) {
+    return PyErr_NoMemory();
+  }
+  memcpy(VariableName, NameIn, (size_t)NameInSize);
+
+  VariableNameSize = BufferSize;
   Py_BEGIN_ALLOW_THREADS
-  Status = gRT->GetNextVariableName((UINTN *)&NameSize, (CHAR16 *)VariableName, &VendorGuid);
+  Status = gRT->GetNextVariableName(&VariableNameSize, VariableName, &VendorGuid);
   Py_END_ALLOW_THREADS
 
-  GuidToStr((EFI_GUID *)&VendorGuid, (UINT8 *)GuidOut);
+  //
+  // Never read past the buffer, even if firmware left the name unterminated.
+  //
+  for (NameLength = 0; NameLength < BufferSize / sizeof(CHAR16); NameLength++) {
+    if (VariableName[NameLength] == 0) {
+      break;
+    }
+  }
 
-  return Py_BuildValue("(IuKs)", (UINT32) Status, VariableName, NameSize, &GuidOut);
+  ByteOrder = -1;
+  NameOut = PyUnicode_DecodeUTF16((const char *)VariableName, NameLength * sizeof(CHAR16),
+                                  "surrogatepass", &ByteOrder);
+  free(VariableName);
+  if (NameOut == NULL) {
+    return NULL;
+  }
+
+  GuidToStr(&VendorGuid, (UINT8 *)GuidOut);
+
+  Result = Py_BuildValue("(IOKs)", (UINT32)Status, NameOut, (UINT64)VariableNameSize, GuidOut);
+  Py_DECREF(NameOut);
+  return Result;
 }
 
 PyDoc_STRVAR(MiscRT_SetVariable__doc__,
@@ -4909,6 +5060,9 @@ static PyMethodDef edk2_methods[] = {
     {"allocphysmem",        posix_allocphysmem,          METH_VARARGS, efi_allocphysmem__doc__},
     {"cpuid",               edk2_cpuid,                 METH_VARARGS, efi_cpuid__doc__},
     {"cpuid_ex",            edk2_cpuid_ex,              METH_VARARGS, efi_cpuid_ex__doc__},
+    {"GetSystemTable",      edk2_GetSystemTable,        METH_NOARGS,  efi_GetSystemTable__doc__},
+    {"GetMemoryAttributes", edk2_GetMemoryAttributes,   METH_VARARGS, efi_GetMemoryAttributes__doc__},
+    {"GetMemoryMap",        edk2_GetMemoryMap,          METH_NOARGS,  efi_GetMemoryMap__doc__},
     {"GetVariable",         MiscRT_GetVariable,          METH_VARARGS, MiscRT_GetVariable__doc__},
     {"GetNextVariableName", MiscRT_GetNextVariableName,  METH_VARARGS, MiscRT_GetNextVariableName__doc__},
     {"SetVariable",         MiscRT_SetVariable,          METH_VARARGS, MiscRT_SetVariable__doc__},
