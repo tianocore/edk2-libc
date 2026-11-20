@@ -4620,41 +4620,92 @@ MiscRT_GetVariable(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(MiscRT_GetNextVariableName__doc__,
-"(Status, VariableNameSize, VariableName, VendorGuid) = GetNextVariableName(NameSize, VariableName, GUID)\n\n\
-Enumerates the current variable names.");
+"(Status, VariableName, VariableNameSize, VendorGuid) = GetNextVariableName(NameSize, VariableName, GUID)\n\n\
+Enumerates the current variable names.\n\
+NameSize is the size in bytes of the name buffer to use. VariableName is the\n\
+previous name as UTF-16LE bytes and GUID is the previous vendor GUID as 16\n\
+bytes (uuid.bytes_le). On EFI_BUFFER_TOO_SMALL, VariableNameSize is the\n\
+required buffer size.");
 
 static
 PyObject *
 MiscRT_GetNextVariableName(PyObject *self, PyObject *args)
 {
   UINT64        NameSize;
-  CHAR16       *VariableName, *NameIn;
-  UINT32        GuidSize, VariableNameSize, i;
+  UINTN         BufferSize;
+  UINTN         VariableNameSize;
+  UINTN         NameLength;
+  CHAR16       *VariableName;
+  const char   *NameIn;
+  Py_ssize_t    NameInSize;
+  const char   *GuidIn;
+  Py_ssize_t    GuidSize;
   EFI_GUID      VendorGuid;
   EFI_STATUS    Status;
-  const char   *GuidIn;
-  char         *VendorGuidPtr, *GuidOut[37];
+  PyObject     *NameOut;
+  PyObject     *Result;
+  int           ByteOrder;
+  char          GuidOut[37];
 
-  if(!PyArg_ParseTuple(args, "Ky#s#", &NameSize, &NameIn, &VariableNameSize, &GuidIn, &GuidSize))
+  if(!PyArg_ParseTuple(args, "Ky#s#", &NameSize, &NameIn, &NameInSize, &GuidIn, &GuidSize))
   {
     return NULL;
   }
 
-  VendorGuidPtr = (char *)&VendorGuid;
-  for (i=0; i<sizeof(VendorGuid); i++)
-    VendorGuidPtr[i] = GuidIn[i];
+  if (GuidSize != sizeof(EFI_GUID)) {
+    PyErr_SetString(PyExc_ValueError, "GUID must be 16 bytes");
+    return NULL;
+  }
+  memcpy(&VendorGuid, GuidIn, sizeof(VendorGuid));
 
-  for (i=0; i<NameSize && NameIn[i] != (CHAR16)0; i++)
-    VariableName[i] = NameIn[i];
-  VariableName[i] = NameIn[i];
+  if (NameSize > (UINT64)(PY_SSIZE_T_MAX - sizeof(CHAR16))) {
+    PyErr_SetString(PyExc_OverflowError, "NameSize is too large");
+    return NULL;
+  }
 
+  //
+  // The buffer must be at least NameSize bytes, must hold the caller's name
+  // plus a terminating CHAR16, and must be a whole number of CHAR16s.
+  //
+  BufferSize = (UINTN)NameSize;
+  if (BufferSize < (UINTN)NameInSize + sizeof(CHAR16)) {
+    BufferSize = (UINTN)NameInSize + sizeof(CHAR16);
+  }
+  BufferSize = (BufferSize + 1) & ~(UINTN)1;
+
+  VariableName = calloc(1, BufferSize);
+  if (VariableName == NULL) {
+    return PyErr_NoMemory();
+  }
+  memcpy(VariableName, NameIn, (size_t)NameInSize);
+
+  VariableNameSize = BufferSize;
   Py_BEGIN_ALLOW_THREADS
-  Status = gRT->GetNextVariableName((UINTN *)&NameSize, (CHAR16 *)VariableName, &VendorGuid);
+  Status = gRT->GetNextVariableName(&VariableNameSize, VariableName, &VendorGuid);
   Py_END_ALLOW_THREADS
 
-  GuidToStr((EFI_GUID *)&VendorGuid, (UINT8 *)GuidOut);
+  //
+  // Never read past the buffer, even if firmware left the name unterminated.
+  //
+  for (NameLength = 0; NameLength < BufferSize / sizeof(CHAR16); NameLength++) {
+    if (VariableName[NameLength] == 0) {
+      break;
+    }
+  }
 
-  return Py_BuildValue("(IuKs)", (UINT32) Status, VariableName, NameSize, &GuidOut);
+  ByteOrder = -1;
+  NameOut = PyUnicode_DecodeUTF16((const char *)VariableName, NameLength * sizeof(CHAR16),
+                                  "surrogatepass", &ByteOrder);
+  free(VariableName);
+  if (NameOut == NULL) {
+    return NULL;
+  }
+
+  GuidToStr(&VendorGuid, (UINT8 *)GuidOut);
+
+  Result = Py_BuildValue("(IOKs)", (UINT32)Status, NameOut, (UINT64)VariableNameSize, GuidOut);
+  Py_DECREF(NameOut);
+  return Result;
 }
 
 PyDoc_STRVAR(MiscRT_SetVariable__doc__,
