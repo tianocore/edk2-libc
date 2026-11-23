@@ -203,10 +203,16 @@ PathAdjust(
   )
 {
   wchar_t    *NewPath;
+  size_t      Length;
 
   NewPath = calloc(PATH_MAX, sizeof(wchar_t));
   if(NewPath != NULL) {
-    wmemcpy(NewPath, Path, PATH_MAX);
+    // Path is usually much smaller than PATH_MAX; never read past its end.
+    Length = wcslen(Path);
+    if(Length > PATH_MAX - 1) {
+      Length = PATH_MAX - 1;
+    }
+    wmemcpy(NewPath, Path, Length);
   }
   else {
     errno = ENOMEM;
@@ -239,10 +245,16 @@ PathAlias(
   )
 {
   wchar_t    *NewPath;
+  size_t      Length;
 
   NewPath = calloc(PATH_MAX, sizeof(wchar_t));
   if(NewPath != NULL) {
-    wmemcpy(NewPath, Path, PATH_MAX);
+    // Path is usually much smaller than PATH_MAX; never read past its end.
+    Length = wcslen(Path);
+    if(Length > PATH_MAX - 1) {
+      Length = PATH_MAX - 1;
+    }
+    wmemcpy(NewPath, Path, Length);
   }
   else {
     errno = ENOMEM;
