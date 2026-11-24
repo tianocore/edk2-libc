@@ -1,0 +1,7 @@
+# Local Python 3.12 UEFI package output (create_python_pkg.bat).
+# Globbed rather than enumerated: the previous explicit list let ad-hoc staging
+# trees such as myUEFIPy312_0908/ and myUEFIPy312_latest/ stay untracked-but-
+# visible, which is how an earlier `git add -A` swept 278 generated files into a
+# commit. Anything matching this prefix is build output, never source.
+/myUEFIPy312*/
+/myUEFIPy/

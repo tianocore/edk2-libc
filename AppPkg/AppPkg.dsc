@@ -28,6 +28,9 @@
   DEFINE DEBUG_PRINT_ERROR_LEVEL  = 0x80000040  # Flags to control amount of debug output
   DEFINE DEBUG_PROPERTY_MASK      = 0
 
+  # Python 3.12: FALSE = Iteration 1 MIN (no Phase 8). FULL: build -D BUILD_PYTHON312_FULL=TRUE
+  DEFINE BUILD_PYTHON312_FULL     = FALSE
+
 !include MdePkg/MdeLibs.dsc.inc
 
 [PcdsFeatureFlag]
@@ -126,6 +129,17 @@
     AppPkg/Applications/Python/Python-3.6.8/Python368.inf
   !endif
 
+#### Conditional compilation of python312.inf by passing -D BUILD_PYTHON312
+#### MIN (default): build with -D BUILD_PYTHON312 only (Phase 8 omitted).
+#### FULL: add -D BUILD_PYTHON312_FULL=TRUE (zlib, ctypes, OpenSSL).
+  !if $(BUILD_PYTHON312)
+    !if $(BUILD_PYTHON312_FULL) == TRUE
+      AppPkg/Applications/Python/Python-3.12.13/Python312.inf
+    !else
+      AppPkg/Applications/Python/Python-3.12.13/Python312_MIN.inf
+    !endif
+  !endif
+
 #### Un-comment the following line to build Lua.
 #  AppPkg/Applications/Lua/Lua.inf
 
@@ -144,3 +158,20 @@
 ##############################################################################
 !include StdLib/StdLib.inc
 !include AppPkg/Applications/Sockets/Sockets.inc
+
+# Boot traces are OFF as of 2026-09-09. This block is DSC-level, so it applied
+# to *every* module in the build - both StdLib/LibC (which is how Main.c's boot
+# lines were compiled in) and Python312 itself. Because EDK2 appends DSC
+# [BuildOptions] to each module's own INF [BuildOptions], removing
+# /DPY_UEFI_BOOT_TRACE=1 from Python312.inf / Python312_MIN.inf alone would NOT
+# have disabled the traces - this block would have kept defining it. Both have
+# to go together, and both have to come back together.
+#
+# To re-enable: uncomment the four lines below, and add /DPY_UEFI_BOOT_TRACE=1
+# to the MSFT CC_FLAGS in the INF you are testing. All trace code is still in
+# the tree, #ifdef-guarded; nothing was deleted.
+#
+#!if $(BUILD_PYTHON312)
+#[BuildOptions]
+#  MSFT:*_*_*_CC_FLAGS = /DPY_UEFI_BOOT_TRACE=1
+#!endif
