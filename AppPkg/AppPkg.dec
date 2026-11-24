@@ -16,6 +16,10 @@
 
 [Includes]
   Applications/Python/Python-3.6.8/Include
+  Applications/Python/Python-3.12.13/Include
+  Applications/Python/Python-3.12.13/Include/internal
+  Applications/Python/Python-3.12.13/PyMod-3.12.13/efi/Include
+  Applications/Python/Python-3.12.13/Modules/_hacl/include
 
 
 [Guids]

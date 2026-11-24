@@ -1,0 +1,345 @@
+## @file
+# Python312_MIN.inf — AppPkg MIN (no Phase 8); selected from AppPkg.dsc when BUILD_PYTHON312_FULL is FALSE
+#
+# Generated during AppPkg migration. ENTRY_POINT = UefiMain.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                 = 0x00010016
+  BASE_NAME                   = Python312
+  FILE_GUID                   = 1c13d89b-76e2-4dd1-8acd-d542b8009c4f
+  MODULE_TYPE                 = UEFI_APPLICATION
+  VERSION_STRING              = 0.1
+  ENTRY_POINT                 = UefiMain
+
+  DEFINE PYTHON_VERSION       = 3.12.13
+  DEFINE LIBFFI_INC           = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/libffi/include
+  DEFINE OPENSSL_ROOT       = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/openssl
+  DEFINE LIBFFI_INT_INC       = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/libffi/libffi/include
+  # MSVC _ctypes uses libffi_msvc (Python368 pattern), not vendored edk2-libffi headers
+  DEFINE LIBFFI_MSVC_INC      = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/_ctypes/libffi_msvc
+  # VS2022 Iteration 1 MIN — no zlib/ctypes/OpenSSL (see Python312_MIN.inf)
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ShellPkg/ShellPkg.dec
+  StdLib/StdLib.dec
+  AppPkg/AppPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  DebugLib
+  LibC
+  LibString
+  LibStdio
+  LibGdtoa
+  LibMath
+  LibWchar
+  LibGen
+  LibNetUtil
+  DevMedia
+  BsdSocketLib
+  EfiSocketLib
+
+[Protocols]
+  gEfiCpuArchProtocolGuid
+  gEfiLoadedImageProtocolGuid
+  gEfiSimpleTextInputExProtocolGuid
+  gEfiRngProtocolGuid
+  gEfiShellProtocolGuid
+
+[FixedPcd]
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x0F
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000040
+
+[Sources]
+
+# --- UEFI glue (from Python312.inf) ---
+  PyMod-3.12.13/efi/src/edk2main.c
+  PyMod-3.12.13/efi/src/py312_openssl_uefi.c
+  PyMod-3.12.13/efi/src/edk2stack.nasm
+  PyMod-3.12.13/efi/src/dummy_dlfcn.c
+  PyMod-3.12.13/efi/src/dummy_unistd.c
+  PyMod-3.12.13/efi/src/dummy_pthread.c
+  PyMod-3.12.13/efi/src/dummy_mmap.c
+  PyMod-3.12.13/efi/src/edk2console.c
+  PyMod-3.12.13/efi/src/edk2excep.c
+  PyMod-3.12.13/efi/src/edk2handler.nasm
+  PyMod-3.12.13/efi/src/urandom.c
+  PyMod-3.12.13/efi/src/time.c
+  PyMod-3.12.13/efi/src/fs.c
+  PyMod-3.12.13/efi/src/environ.c
+  PyMod-3.12.13/efi/src/cmath.c
+  PyMod-3.12.13/efi/src/msvc_chkstk.c | MSFT
+
+# --- Programs ---
+  PyMod-3.12.13/Programs/python.c
+
+# --- Inittab ---
+  PyMod-3.12.13/Modules/config.c
+
+# --- Core (PythonCoreLib) ---
+  PyMod-3.12.13/Modules/gcmodule.c
+  Modules/getbuildinfo.c
+  PyMod-3.12.13/Modules/getpath.c
+  PyMod-3.12.13/Modules/main.c
+  Objects/abstract.c
+  Objects/boolobject.c
+  Objects/bytearrayobject.c
+  Objects/bytes_methods.c
+  Objects/bytesobject.c
+  Objects/call.c
+  Objects/capsule.c
+  Objects/cellobject.c
+  Objects/classobject.c
+  Objects/codeobject.c
+  PyMod-3.12.13/Objects/complexobject.c
+  Objects/descrobject.c
+  Objects/dictobject.c
+  Objects/enumobject.c
+  Objects/exceptions.c
+  Objects/fileobject.c
+  PyMod-3.12.13/Objects/floatobject.c
+  Objects/frameobject.c
+  Objects/funcobject.c
+  Objects/genericaliasobject.c
+  Objects/genobject.c
+  Objects/interpreteridobject.c
+  Objects/iterobject.c
+  Objects/listobject.c
+  Objects/longobject.c
+  Objects/memoryobject.c
+  Objects/methodobject.c
+  Objects/moduleobject.c
+  Objects/namespaceobject.c
+  Objects/object.c
+  Objects/obmalloc.c
+  Objects/odictobject.c
+  Objects/picklebufobject.c
+  Objects/rangeobject.c
+  Objects/setobject.c
+  Objects/sliceobject.c
+  Objects/structseq.c
+  Objects/tupleobject.c
+  Objects/typeobject.c
+  Objects/typevarobject.c
+  Objects/unicodectype.c
+  Objects/unicodeobject.c
+  Objects/unionobject.c
+  Objects/weakrefobject.c
+  Parser/action_helpers.c
+  Parser/parser.c
+  Parser/peg_api.c
+  Parser/pegen.c
+  Parser/pegen_errors.c
+  Parser/string_parser.c
+  Parser/token.c
+  Parser/myreadline.c
+  PyMod-3.12.13/Parser/tokenizer.c
+  Python/Python-ast.c
+  Python/Python-tokenize.c
+  Python/_warnings.c
+  Python/asdl.c
+  Python/asm_trampoline.S | GCC
+  Python/assemble.c
+  Python/ast.c
+  Python/ast_opt.c
+  Python/ast_unparse.c
+  Python/bltinmodule.c
+  PyMod-3.12.13/Python/bootstrap_hash.c
+  Python/ceval.c
+  Python/ceval_gil.c
+  Python/codecs.c
+  Python/compile.c
+  Python/context.c
+  PyMod-3.12.13/Python/deepfreeze/deepfreeze.c
+  Python/dtoa.c
+  PyMod-3.12.13/Python/dynamic_annotations.c
+  Python/errors.c
+  PyMod-3.12.13/Python/fileutils.c
+  Python/flowgraph.c
+  Python/formatter_unicode.c
+  Python/frame.c
+  PyMod-3.12.13/Python/frozen.c
+  Python/frozenmain.c
+  Python/future.c
+  PyMod-3.12.13/Python/getargs.c
+  Python/getcompiler.c
+  Python/getcopyright.c
+  Python/getopt.c
+  Python/getplatform.c
+  Python/getversion.c
+  Python/hamt.c
+  Python/hashtable.c
+  Python/import.c
+  Python/importdl.c
+  Python/initconfig.c
+  Python/instrumentation.c
+  Python/intrinsics.c
+  Python/legacy_tracing.c
+  Python/marshal.c
+  Python/modsupport.c
+  PyMod-3.12.13/Python/mysnprintf.c
+  Python/mystrtoul.c
+  Python/pathconfig.c
+  Python/perf_trampoline.c
+  Python/preconfig.c
+  Python/pyarena.c
+  Python/pyctype.c
+  Python/pyfpe.c
+  PyMod-3.12.13/Python/pyhash.c
+  PyMod-3.12.13/Python/pylifecycle.c
+  Python/pymath.c
+  PyMod-3.12.13/Python/pystate.c
+  Python/pystrcmp.c
+  Python/pystrhex.c
+  Python/pystrtod.c
+  Python/pythonrun.c
+  PyMod-3.12.13/Python/pytime.c
+  Python/specialize.c
+  Python/structmember.c
+  Python/suggestions.c
+  Python/symtable.c
+  PyMod-3.12.13/Python/sysmodule.c
+  Python/thread.c
+  Python/traceback.c
+  Python/tracemalloc.c
+
+# --- Builtin (PythonBuiltinLib) ---
+  Modules/atexitmodule.c
+  PyMod-3.12.13/Modules/faulthandler.c
+  PyMod-3.12.13/Modules/posixmodule.c
+  PyMod-3.12.13/Modules/signalmodule.c
+  Modules/_tracemalloc.c
+  Modules/_codecsmodule.c
+  Modules/_collectionsmodule.c
+  Modules/errnomodule.c
+  Modules/_io/_iomodule.c
+  Modules/_io/iobase.c
+  Modules/_io/fileio.c
+  Modules/_io/bytesio.c
+  PyMod-3.12.13/Modules/_io/bufferedio.c
+  Modules/_io/textio.c
+  Modules/_io/stringio.c
+  Modules/itertoolsmodule.c
+  Modules/_sre/sre.c
+  Modules/_threadmodule.c
+  PyMod-3.12.13/Modules/timemodule.c
+  Modules/_weakref.c
+  Modules/_abc.c
+  Modules/_functoolsmodule.c
+  Modules/_localemodule.c
+  Modules/_operator.c
+  Modules/_stat.c
+  Modules/symtablemodule.c
+  PyMod-3.12.13/Modules/pwdmodule.c
+
+# --- Ext MIN (PythonExtLib minus ffi/ssl/zlib/readline) ---
+  Modules/_asynciomodule.c
+  Modules/_bisectmodule.c
+  Modules/_blake2/blake2b_impl.c
+  Modules/_blake2/blake2module.c
+  Modules/_blake2/blake2s_impl.c
+  Modules/_contextvarsmodule.c
+  Modules/_csv.c
+  PyMod-3.12.13/Modules/_datetimemodule.c
+  PyMod-3.12.13/Modules/_decimal/_decimal.c
+  Modules/_decimal/libmpdec/basearith.c
+  Modules/_decimal/libmpdec/constants.c
+  Modules/_decimal/libmpdec/context.c
+  Modules/_decimal/libmpdec/convolute.c
+  Modules/_decimal/libmpdec/crt.c
+  Modules/_decimal/libmpdec/difradix2.c
+  Modules/_decimal/libmpdec/fnt.c
+  Modules/_decimal/libmpdec/fourstep.c
+  Modules/_decimal/libmpdec/io.c
+  Modules/_decimal/libmpdec/mpalloc.c
+  Modules/_decimal/libmpdec/mpdecimal.c
+  Modules/_decimal/libmpdec/numbertheory.c
+  Modules/_decimal/libmpdec/sixstep.c
+  Modules/_decimal/libmpdec/transpose.c
+  Modules/_elementtree.c
+  Modules/_hacl/Hacl_Hash_MD5.c
+  Modules/_hacl/Hacl_Hash_SHA1.c
+  Modules/_hacl/Hacl_Hash_SHA2.c
+  Modules/_hacl/Hacl_Hash_SHA3.c
+  Modules/_heapqmodule.c
+  Modules/_json.c
+  Modules/_lsprof.c
+  PyMod-3.12.13/Modules/_multiprocessing/multiprocessing.c
+  Modules/_multiprocessing/posixshmem.c
+  Modules/_multiprocessing/semaphore.c
+  Modules/_opcode.c
+  PyMod-3.12.13/Modules/_pickle.c
+  PyMod-3.12.13/Modules/_posixsubprocess.c
+  Modules/_queuemodule.c
+  Modules/_randommodule.c
+  Modules/sha3module.c
+  Modules/_statisticsmodule.c
+  Modules/_struct.c
+  Modules/_typingmodule.c
+  Modules/_xxinterpchannelsmodule.c
+  Modules/_xxsubinterpretersmodule.c
+  Modules/_zoneinfo.c
+  Modules/arraymodule.c
+  Modules/audioop.c
+  PyMod-3.12.13/Modules/binascii.c
+  Modules/cjkcodecs/_codecs_cn.c
+  Modules/cjkcodecs/_codecs_hk.c
+  Modules/cjkcodecs/_codecs_iso2022.c
+  Modules/cjkcodecs/_codecs_jp.c
+  Modules/cjkcodecs/_codecs_kr.c
+  Modules/cjkcodecs/_codecs_tw.c
+  Modules/cjkcodecs/multibytecodec.c
+  PyMod-3.12.13/Modules/cmathmodule.c
+  PyMod-3.12.13/Modules/expat/xmlparse.c
+  Modules/expat/xmlrole.c
+  Modules/expat/xmltok.c
+  PyMod-3.12.13/Modules/mathmodule.c
+  Modules/md5module.c
+  PyMod-3.12.13/Modules/mmapmodule.c
+  Modules/pyexpat.c
+  Modules/rotatingtree.c
+  Modules/selectmodule.c
+  Modules/sha1module.c
+  Modules/sha2module.c
+  PyMod-3.12.13/Modules/socketmodule.c
+  PyMod-3.12.13/Modules/termios.c
+  Modules/unicodedata.c
+  Modules/xxlimited.c
+  Modules/xxlimited_35.c
+  Modules/xxsubtype.c
+
+
+[Sources.X64]
+  PyMod-$(PYTHON_VERSION)/Modules/cpu.nasm | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/cpu_gcc.s | GCC
+
+[Sources.IA32]
+  PyMod-$(PYTHON_VERSION)/Modules/cpu_ia32.nasm | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/cpu_ia32_gcc.s | GCC
+
+
+[BuildOptions]
+  # Iteration 1 MIN — no Phase 8 (zlib, ctypes, OpenSSL)
+  #
+  # PY_UEFI_BOOT_TRACE is OFF (2026-09-09), matching Python312.inf. The trace
+  # code stays in the tree, #ifdef-guarded, so re-enabling is adding
+  # /DPY_UEFI_BOOT_TRACE=1 to the line below AND uncommenting the DSC-level
+  # [BuildOptions] block in AppPkg/AppPkg.dsc, which applies to this module too. Keep the two INFs in step: MIN is
+  # where entry-path problems are cheapest to bisect, so a MIN image with the
+  # trace on is the usual first move when the boot stops early.
+  MSFT:*_*_*_CC_FLAGS = /GL- /Oi- /wd4018 /wd4054 /wd4055 /wd4101 /wd4131 /wd4152 /wd4201 /wd4204 /wd4210 /wd4244 /wd4267 /wd4273 /wd4305 /wd4310 /wd4389 /wd4701 /wd4702 /wd4706 /wd4456 /wd4312 /wd4457 /wd4459 /wd4474 /wd4476 /I$(EDK2_LIBC_PATH)\AppPkg\Applications\Python\Python-3.12.13\Include /I$(EDK2_LIBC_PATH)\AppPkg\Applications\Python\Python-3.12.13\Include\internal /I$(EDK2_LIBC_PATH)\AppPkg\Applications\Python\Python-3.12.13\PyMod-3.12.13\efi\Include /I$(EDK2_LIBC_PATH)\AppPkg\Applications\Python\Python-3.12.13\Modules\_hacl\include /DNO_MSABI_VA_FUNCS /DPy_BUILD_CORE /DHAVE_MEMMOVE /DUSE_PYEXPAT_CAPI /DXML_STATIC /DXML_POOR_ENTROPY /DUEFI_C_SOURCE /DPY_UEFI_MSVC_IDT=1 -D UEFI /WX-
+  GCC:*_*_*_CC_FLAGS = -Wno-unused-function -Wno-format -Wno-error -fno-strict-aliasing -I$(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/Include -I$(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/Include/internal -I$(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/efi/Include -I$(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/Modules/_hacl/include -DNO_MSABI_VA_FUNCS -Wno-error=maybe-uninitialized -Wno-error=unused-but-set-variable -DPy_BUILD_CORE -DHAVE_MEMMOVE
+  # edk2stack.nasm / edk2handler.nasm take their arguments in rdi/rsi (System V)
+  # by default. MSVC passes them in rcx/rdx, so an MSFT build needs this or
+  # edk2_switch_stack sets rsp from garbage. GCC is unaffected — no flag, no change.
+  MSFT:*_*_*_NASM_FLAGS = -DPY_UEFI_MS_ABI
+
+[BuildOptions.IA32]
+  MSFT:*_*_*_CC_FLAGS = /DUEFI_MSVC_32
+
+[BuildOptions.X64]
+  MSFT:*_*_*_CC_FLAGS = /DUEFI_MSVC_64
