@@ -1,0 +1,1054 @@
+From ee494340b2a9a9774ddbcc5c46e9c750a2f46468 Mon Sep 17 00:00:00 2001
+From: Dimitry Kloper <dimitry.kloper@intel.com>
+Date: Sun, 29 Sep 2024 13:57:08 +0300
+Subject: [PATCH] Introduce support for ANSI escape codes for console
+
+1. Basic ANSI escape sequences for output
+2. Basic control keys are now converted to corresponding ANSI escape
+sequences for input
+3. Cursor position request is now supported.
+---
+ StdLib/LibC/Uefi/Devices/Console/daAnsi.c     | 703 ++++++++++++++++++
+ StdLib/LibC/Uefi/Devices/Console/daConsole.c  |  94 ++-
+ StdLib/LibC/Uefi/Devices/daConsole.inf        |   3 +-
+ StdLib/LibC/Uefi/InteractiveIO/IIO.c          |  14 +-
+ StdLib/LibC/Uefi/InteractiveIO/IIOwrite.c     |   6 +-
+ StdLib/LibC/Uefi/SysCalls.c                   |   2 +-
+ .../Include/Device/Console.h                  |  24 +
+ .../Include/Device/IIO.h                      |   9 +
+ 8 files changed, 828 insertions(+), 27 deletions(-)
+ create mode 100644 StdLib/LibC/Uefi/Devices/Console/daAnsi.c
+
+diff --git a/StdLib/LibC/Uefi/Devices/Console/daAnsi.c b/StdLib/LibC/Uefi/Devices/Console/daAnsi.c
+new file mode 100644
+index 0000000..ed7a4a2
+--- /dev/null
++++ b/StdLib/LibC/Uefi/Devices/Console/daAnsi.c
+@@ -0,0 +1,703 @@
++/** @file
++  Minimal handler of ANSI escape sequences for UEFI Console.
++
++  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR> This program
++  and the accompanying materials are licensed and made available under the
++  terms and conditions of the BSD License that accompanies this distribution.
++  The full text of the license may be found at
++  http://opensource.org/licenses/bsd-license.php.
++
++  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
++  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++**/
++
++#include  <Uefi.h>
++#include  <Library/BaseLib.h>
++#include  <Protocol/SimpleTextIn.h>
++#include  <Protocol/SimpleTextOut.h>
++
++#include  <errno.h>
++#include  <wctype.h>
++#include  <wchar.h>
++#include  <stdarg.h>
++#include  <sys/termios.h>
++
++#include  <Containers/Fifo.h>
++#include  <Device/Console.h>
++#include  <Device/IIO.h>
++
++#define MAX_NUMARGS 15
++
++#ifndef MIN
++#define MIN(a,b) ((a)<(b)?(a):(b))
++#endif
++
++#ifndef MAX
++#define MAX(a,b) ((a)>(b)?(a):(b))
++#endif
++
++static
++int
++da_ConCtrlExec(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *proto,
++               CtrlCharState *state,
++               cIIO *iio) 
++{
++  UINTN cols = 0, rows = 0;
++  proto->QueryMode(proto, proto->Mode->Mode, &cols, &rows);
++  
++  switch(state->cmd) {
++    case L'H':
++    case L'f':
++      if(state->numargs == 0) {
++        proto->SetCursorPosition(proto, 0, 0);
++      } else if(state->numargs == 2) {
++        proto->SetCursorPosition(proto, state->numarg[1], state->numarg[0]);
++      } else {
++        return 0;
++      }
++      break;
++    case L'A': {
++      UINTN delta;
++      switch(state->numargs) {
++        case 0:
++          delta = 1;
++          break;
++        case 1:
++          delta = state->numarg[0];
++          break;
++        default:
++          return 0;
++      }
++      proto->SetCursorPosition(
++          proto,
++          proto->Mode->CursorColumn,
++          MAX(0, proto->Mode->CursorRow - delta));
++    } break;
++    case L'B': {
++      UINTN delta;
++      switch(state->numargs) {
++        case 0:
++          delta = 1;
++          break;
++        case 1:
++          delta = state->numarg[0];
++          break;
++        default:
++          return 0;
++      }
++
++      proto->SetCursorPosition(
++          proto,
++          proto->Mode->CursorColumn,
++          MIN(proto->Mode->CursorRow + delta, rows-1));
++    } break;
++    case L'C': {
++      UINTN delta;
++      switch(state->numargs) {
++        case 0:
++          delta = 1;
++          break;
++        case 1:
++          delta = state->numarg[0];
++          break;
++        default:
++          return 0;
++      }
++
++      proto->SetCursorPosition(
++          proto,
++          MIN(proto->Mode->CursorColumn + delta, cols-1),
++          proto->Mode->CursorRow);
++    } break;
++    case L'D': {
++      UINTN delta;
++      switch(state->numargs) {
++        case 0:
++          delta = 1;
++          break;
++        case 1:
++          delta = state->numarg[0];
++          break;
++        default:
++          return 0;
++      }
++      
++      proto->SetCursorPosition(
++          proto,
++          MAX(0, proto->Mode->CursorColumn - delta),
++          proto->Mode->CursorRow);
++    } break;
++    case L'E': {
++      UINTN delta;
++      switch(state->numargs) {
++        case 0:
++          delta = 1;
++          break;
++        case 1:
++          delta = state->numarg[0];
++          break;
++        default:
++          return 0;
++      }
++      
++      proto->SetCursorPosition(
++          proto,
++          0,
++          MIN(proto->Mode->CursorRow + delta, rows-1));
++    } break;
++    case L'F': {
++      UINTN delta;
++      switch(state->numargs) {
++        case 0:
++          delta = 1;
++          break;
++        case 1:
++          delta = state->numarg[0];
++          break;
++        default:
++          return 0;
++      }
++      
++      proto->SetCursorPosition(
++          proto,
++          0,
++          MAX(0, proto->Mode->CursorRow - delta));
++    } break;
++    case L'G': {
++      UINTN delta;
++      switch(state->numargs) {
++        case 0:
++          delta = 1;
++          break;
++        case 1:
++          delta = state->numarg[0];
++          break;
++        default:
++          return 0;
++      }
++      
++      proto->SetCursorPosition(
++          proto,
++          0,
++          MAX(0, proto->Mode->CursorRow - delta));
++    } break;
++    case L'J': {
++      INT32 row = proto->Mode->CursorRow;
++      INT32 col = proto->Mode->CursorColumn;
++
++      if(state->numargs == 0)
++        state->numarg[0] = 0;
++      
++      switch(state->numarg[0])
++      {
++        case 0:          
++          for(int i = 0; i < ((rows-row) * cols + cols-col); i++)
++            proto->OutputString(proto, L" ");
++          break;
++        case 1:
++          proto->SetCursorPosition(proto, 0, 0);
++          for(int i = 0; i < (row * cols + col + 1); i++)
++            proto->OutputString(proto, L" ");
++          break;
++        case 2:
++          proto->ClearScreen(proto);
++          break;
++        default:
++          return 0;
++      }
++      proto->SetCursorPosition(proto, col, row);
++    } break;
++    case L'K': {
++      INT32 row = proto->Mode->CursorRow;
++      INT32 col = proto->Mode->CursorColumn;
++
++      if(state->numargs == 0)
++        state->numarg[0] = 0;
++      
++      switch(state->numarg[0])
++      {
++        case 0:          
++          for(int i = 0; i < (cols-col); i++)
++            proto->OutputString(proto, L" ");
++          break;
++        case 1:
++          proto->SetCursorPosition(proto, 0, row);
++          for(int i = 0; i < (col + 1); i++)
++            proto->OutputString(proto, L" ");
++          break;
++        case 2:
++          proto->SetCursorPosition(proto, 0, row);
++          for(int i = 0; i < cols; i++)
++            proto->OutputString(proto, L" ");
++          break;
++        default:
++          return 0;
++      }
++      proto->SetCursorPosition(proto, col, row);
++    } break;
++    case L'm': {
++      if(state->numargs == 0) {
++        return 0;
++      }
++      for(int i = 0; i < state->numargs; i++) {
++        switch(state->numarg[i]) {
++          case 0:
++            proto->SetAttribute(proto, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
++            break;
++          case 1:
++            proto->SetAttribute(proto, proto->Mode->Attribute | EFI_BRIGHT);
++            break;
++          case 2:
++          case 22:
++            proto->SetAttribute(proto, proto->Mode->Attribute & (~EFI_BRIGHT));
++            break;
++          case 7:
++          case 27:
++            proto->SetAttribute(proto, (~proto->Mode->Attribute) & 0x7f);
++            break;
++          case 30:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x78) | EFI_BLACK);
++            break;
++          case 100:
++          case 40:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x0f) | (EFI_BLACK<<4));
++            break;
++          case 31:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x78) | EFI_RED);
++            break;
++          case 101:
++          case 41:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x0f) | (EFI_RED<<4));
++            break;
++          case 32:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x78) | EFI_GREEN);
++            break;
++          case 102:            
++          case 42:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x0f) | (EFI_GREEN<<4));
++            break;
++          case 33:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x78) | EFI_YELLOW);
++            break;
++          case 103:            
++          case 43:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x0f) | (EFI_BROWN<<4));
++            break;
++          case 34:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x78) | EFI_BLUE);
++            break;
++          case 104:
++          case 44:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x0f) | (EFI_BLUE<<4));
++            break;
++          case 35:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x78) | EFI_MAGENTA);
++            break;
++          case 105:            
++          case 45:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x0f) | (EFI_MAGENTA<<4));
++            break;
++          case 36:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x78) | EFI_CYAN);
++            break;
++          case 106:            
++          case 46:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x0f) | (EFI_CYAN<<4));
++            break;
++          case 37:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x78) | EFI_WHITE);
++            break;
++          case 107:            
++          case 47:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x0f) | ((EFI_RED | EFI_BLUE| EFI_GREEN)<<4));
++            break;
++          case 39:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x70) | EFI_LIGHTGRAY);
++            break;
++          case 49:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x0f) | (EFI_BLACK<<4));
++            break;            
++          case 90:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x70) | EFI_BRIGHT | EFI_BLACK);
++            break;            
++          case 91:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x70) | EFI_BRIGHT | EFI_RED);
++            break;            
++          case 92:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x70) | EFI_BRIGHT | EFI_GREEN);
++            break;            
++          case 93:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x70) | EFI_BRIGHT | EFI_YELLOW);
++            break;            
++          case 94:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x70) | EFI_BRIGHT | EFI_BLUE);
++            break;            
++          case 95:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x70) | EFI_BRIGHT | EFI_MAGENTA);
++            break;            
++          case 96:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x70) | EFI_BRIGHT | EFI_CYAN);
++            break;            
++          case 97:
++            proto->SetAttribute(
++                proto,
++                (proto->Mode->Attribute & 0x70) | EFI_BRIGHT | EFI_WHITE);
++            break;            
++        }
++      }
++    } break;
++    case L'l':
++    case L'h': {
++      switch(state->cmd_prefix) {
++        case L'=': /* no support for switching mode yet */
++          break;
++        case L'?':
++          if(state->numargs == 1 && state->numarg[0] == 25) {
++            proto->EnableCursor(proto, (state->cmd == L'h'));            
++          }
++          break;
++      }
++    } break;
++    case L'n':
++      if(state->numargs == 1 && state->numarg[0] == 6 && iio != NULL) {
++        iio->cpr_row = proto->Mode->CursorRow;
++        iio->cpr_column = proto->Mode->CursorColumn;
++        iio->cpr_state = CPR_START; 
++      } else {
++        return 0;
++      }
++      break;
++  }
++
++  return 1;
++}
++
++
++size_t
++da_ConCtrlChar(CtrlCharState *state,
++               CHAR16 *buffer,
++               EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *proto,
++               cIIO *iio)
++{
++
++  CHAR16 *cur = buffer;
++  int run_flag = 1;
++  
++  while(run_flag) {
++    switch(state->state) {
++      case CTRLCHAR_INIT: {
++        state->state = CTRLCHAR_START;
++        if(*cur == 0) {
++          run_flag = 0;
++        }
++      } break;        
++      case CTRLCHAR_START:        
++        if(*cur == 0) {
++          run_flag = 0;          
++        } else if(*cur == L'[') {
++          state->state = CTRLCHAR_PARSE;
++          cur += 1;
++        } else {
++          state->state = CTRLCHAR_ERROR;
++        }              
++        break;
++      case CTRLCHAR_PARSE:
++        if(*cur == 0) {
++          run_flag = 0;
++        } else if(*cur >= L'0' && *cur <= L'9') {
++          state->state = CTRLCHAR_NUMARG;
++          state->digit_count = 0;
++          state->numarg[state->numargs] = 0;
++        } else {
++          switch(*cur) {
++            case L'?':
++            case L'=':
++              state->cmd_prefix = *cur;
++              cur += 1;
++              break;
++            default:
++              state->state = CTRLCHAR_CMD;
++              break;
++          }
++        }
++        break;
++      case CTRLCHAR_NUMARG:
++        if(*cur == 0) {
++          run_flag = 0;
++        }else if(*cur >= L'0' && *cur <= L'9') {
++          if(state->digit_count < 4) {
++            state->numarg[state->numargs] *= 10;
++            state->numarg[state->numargs] += *cur - L'0';
++            cur += 1;
++            state->digit_count += 1;
++          } else {
++            state->state = CTRLCHAR_ERROR;
++          }
++        } else if(*cur == L';') {
++          state->state = CTRLCHAR_NUMARG;
++          cur += 1;
++          state->digit_count = 0;
++          state->numargs += 1;          
++          if(state->numargs >= MAX_NUMARGS) {
++            state->state = CTRLCHAR_ERROR;
++          } else {
++            state->numarg[state->numargs] = 0;
++          }
++        } else {
++          state->state = CTRLCHAR_CMD;
++          state->numargs += 1;
++          if(state->numargs < MAX_NUMARGS) {
++            state->numarg[state->numargs] = 0;
++          }
++        }
++        break;
++      case CTRLCHAR_CMD: {        
++        CHAR16 *is_valid = wcschr( L"HABCDEFGsuJKmlhfn", *cur );
++        if(is_valid) {
++          state->cmd = *cur;
++          state->state = CTRLCHAR_END;
++          cur += 1;
++        } else if(*cur == 0) {
++          run_flag = 0;
++        } else {
++          state->state = CTRLCHAR_ERROR;
++        }
++      } break;
++      case CTRLCHAR_ERROR:
++        run_flag = 0;
++        cur = buffer;
++        break;        
++      case CTRLCHAR_END:
++        run_flag = 0;
++        break;        
++    }
++  }
++
++  if(state->state == CTRLCHAR_END) {
++    if(!da_ConCtrlExec(proto, state, iio)) {
++      cur = buffer;
++    }
++  }
++  return cur - buffer;
++}
++
++#define TMP_USTR_SIZE 20
++static CHAR16 tmp_str[TMP_USTR_SIZE];
++
++size_t
++da_ConKeyConvert(cFIFO *inbuf, CHAR16 *buffer, size_t buffer_size)
++{
++  CHAR16 *cur = buffer;
++  CHAR16 *esc = NULL;
++
++  while((size_t)(cur - buffer) < buffer_size) {
++    CHAR16 c = 0;
++    size_t chars_read = 0;
++
++    if(esc != NULL) {
++      if(*esc == 0) {
++        esc = NULL;
++      } else {
++        *cur++ = *esc++;
++        continue;
++      }
++    }
++    
++    chars_read = inbuf->Read(inbuf, &c, 1);
++    if(chars_read == 0) {
++      break;
++    }
++
++    if((c & 0xf000) == 0xe000) {
++      INT16 row = (c >> 6) & 0x3f;
++      INT16 column = c & 0x3f;
++      swprintf(tmp_str, TMP_USTR_SIZE, L"\033[%d;%dR", column, row);
++      esc = tmp_str;
++      continue;
++    }
++    
++    switch(c) {
++      case TtyKeyEject:
++        break;
++      case TtyRecovery:
++        break;
++      case TtyToggleDisplay:
++        break;
++      case TtyHibernate:
++        break;        
++      case TtySuspend:
++        break;
++      case TtyBrightnessDown:
++        break;
++      case TtyBrightnessUp:
++        break;        
++      case TtyVolumeDown:
++        break;
++      case TtyVolumeUp:
++        break;
++      case TtyMute:
++        break;        
++      case TtyF24:
++        esc = L"\x1b[24;2~";
++        break;        
++      case TtyF23:
++        esc = L"\x1b[23;2~";
++        break;
++      case TtyF22:
++        esc = L"\x1b[21;2~";
++        break;
++      case TtyF21:
++        esc = L"\x1b[20;2~";
++        break;
++      case TtyF20:
++        esc = L"\x1b[19;2~";
++        break;        
++      case TtyF19:
++        esc = L"\x1b[18;2~";
++        break;
++      case TtyF18:
++        esc = L"\x1b[17;2~";
++        break;
++      case TtyF17:
++        esc = L"\x1b[15;2~";
++        break;
++      case TtyF16:
++        esc = L"\x1b[1;2S";
++        break;        
++      case TtyF15:
++        break;
++      case TtyF14:
++        esc = L"\x1b[1;2Q";
++        break;
++      case TtyF13:
++        esc = L"\x1b[1;2P";
++        break;        
++      case TtyEscape:
++        esc = L"\x1b";
++        break;        
++      case TtyF12:
++        esc = L"\x1b[24~";
++        break;
++      case TtyF11:
++        esc = L"\x1b[23~";
++        break;
++      case TtyF10:
++        esc = L"\x1b[21~";
++        break;
++      case TtyF9:
++        esc = L"\x1b[20~";
++        break;
++      case TtyF8:
++        esc = L"\x1b[19~";
++        break;
++      case TtyF7:
++        esc = L"\x1b[18~";
++        break;
++      case TtyF6:
++        esc = L"\x1b[17~";
++        break;
++      case TtyF5:
++        esc = L"\x1b[15~";
++        break;        
++      case TtyF4:
++        esc = L"\x1b[14~";
++        break;
++      case TtyF3:
++        esc = L"\x1b[13~";
++        break;
++      case TtyF2:
++        esc = L"\x1b[12~";
++        break;
++      case TtyF1:
++        esc = L"\x1b[11~";
++        break;        
++      case TtyPageDown:
++        esc = L"\x1b[6~";
++        break;
++      case TtyPageUp:
++        esc = L"\x1b[5~";
++        break;
++      case TtyDelete:
++        esc = L"\x1b[3~";
++        break;
++      case TtyInsert:
++        esc = L"\x1b[2~";
++        break;        
++      case TtyEnd:
++        esc = L"\x1b[8~";
++        break;
++      case TtyHome:
++        esc = L"\x1b[7~";
++        break;
++      case TtyLeftArrow:
++        esc = L"\x1b[D";
++        break;
++      case TtyRightArrow:
++        esc = L"\x1b[C";
++        break;        
++      case TtyDownArrow:
++        esc = L"\x1b[B";
++        break;
++      case TtyUpArrow:
++        esc = L"\x1b[A";
++        break;
++    }
++
++    
++    if(esc == NULL) {
++      *cur++ = c;
++    } 
++  }
++
++  return cur - buffer;
++}
+diff --git a/StdLib/LibC/Uefi/Devices/Console/daConsole.c b/StdLib/LibC/Uefi/Devices/Console/daConsole.c
+index ba031d6..b85bbe1 100644
+--- a/StdLib/LibC/Uefi/Devices/Console/daConsole.c
++++ b/StdLib/LibC/Uefi/Devices/Console/daConsole.c
+@@ -44,6 +44,12 @@
+ #include  <Device/IIO.h>
+ #include  <MainData.h>
+ 
++size_t
++da_ConCtrlChar(CtrlCharState *state,
++               CHAR16 *buffer,
++               EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *proto,
++               cIIO *iio);
++
+ static const CHAR16* const
+ stdioNames[NUM_SPECIAL]   = {
+   L"stdin:", L"stdout:", L"stderr:"
+@@ -186,12 +192,15 @@ da_ConWrite(
+   IN  const void           *Buffer
+   )
+ {
++  cIIO                               *Self;  
+   EFI_STATUS                          Status;
+   EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL    *Proto;
+   ConInstance                        *Stream;
+   ssize_t                             NumChar;
+   XY_OFFSET                          CursorPos;
++  CHAR16 *cur = (CHAR16*)Buffer;
+ 
++  Self    = (cIIO *)filp->devdata;  
+   NumChar = -1;
+   Stream = BASE_CR(filp->f_ops, ConInstance, Abstraction);
+   // Quick check to see if Stream looks reasonable
+@@ -217,15 +226,58 @@ da_ConWrite(
+ 
+   }
+   if(!RETURN_ERROR(Status)) {
+-  // Send the Unicode buffer to the console
+-    Status = Proto->OutputString( Proto, (CHAR16 *)Buffer);
++    // Send the Unicode buffer to the console
++    size_t last_char = 0;
++
++    while(cur != NULL && *cur && (size_t)(cur - (CHAR16*)Buffer) < BufferSize) {
++      if(Stream->ctrlCharState.state != CTRLCHAR_INIT &&
++         Stream->ctrlCharState.state != CTRLCHAR_END &&
++         Stream->ctrlCharState.state != CTRLCHAR_ERROR) {
++        cur += da_ConCtrlChar(&Stream->ctrlCharState, cur, Proto, Self);
++        continue;
++      }
++      last_char = wcscspn(cur , L"\001\002\033");
++      if(last_char > 0) {
++        if(!Stream->ctrlCharState.null_char_mode) {
++          CHAR16 tmp = cur[last_char];
++          
++          cur[last_char] = 0;
++          Status = Proto->OutputString( Proto, cur );
++          if(RETURN_ERROR(Status)) {
++            break;
++          }
++          cur[last_char] = tmp;
++        }
++        cur += last_char;
++      } else {
++        switch(*cur) {
++          case '\001':
++            Stream->ctrlCharState.null_char_mode = 1;
++            cur += 1;
++            break;
++          case '\002':
++            Stream->ctrlCharState.null_char_mode = 0;
++            cur += 1;
++            break;
++          case '\033':
++            Stream->ctrlCharState.state = CTRLCHAR_INIT;
++            Stream->ctrlCharState.digit_count = 0;
++            Stream->ctrlCharState.numargs = 0;
++            Stream->ctrlCharState.cmd = 0;
++            Stream->ctrlCharState.cmd_prefix = 0;          
++            
++            cur += 1;            
++            cur += da_ConCtrlChar(&Stream->ctrlCharState, cur, Proto, Self);
++            break;
++        }
++      }
++    }
+   }
+ 
+   // Depending on status, update BufferSize and return
+-  if(!RETURN_ERROR(Status)) {
+-    NumChar = BufferSize;
+-    Stream->NumWritten += NumChar;
+-  }
++  NumChar = cur - (CHAR16*)Buffer;
++  Stream->NumWritten += NumChar;
++
+   EFIerrno = Status;      // Make error reason available to caller
+   return NumChar;
+ }
+@@ -261,17 +313,23 @@ da_ConRawRead (
+   Stream  = BASE_CR(filp->f_ops, ConInstance, Abstraction);
+   Proto   = (EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)Stream->Dev;
+ 
+-  if(Stream->UnGetKey == CHAR_NULL) {
+-    Status = Proto->ReadKeyStroke(Proto, &Key);
+-  }
+-  else {
++  if(Stream->UnGetKey != CHAR_NULL) {
+     Status  = EFI_SUCCESS;
+     // Use the data in the Un-get buffer
+     // Guaranteed that ScanCode and UnicodeChar are not both NUL
+     Key.ScanCode        = SCAN_NULL;
+     Key.UnicodeChar     = Stream->UnGetKey;
+     Stream->UnGetKey    = CHAR_NULL;
++  } else if(Self->cpr_state != CPR_NONE) {
++    Key.UnicodeChar = 0xE000 |
++        (Self->cpr_row & 0x3f) << 6 |
++        (Self->cpr_column & 0x3f);
++    Self->cpr_state = CPR_NONE;
++    Status  = EFI_SUCCESS;
++  } else {
++    Status = Proto->ReadKeyStroke(Proto, &Key);
+   }
++
+   if(Status == EFI_SUCCESS) {
+     // Translate the Escape Scan Code to an ESC character
+     if (Key.ScanCode != 0) {
+@@ -348,7 +406,7 @@ da_ConRead(
+ 
+     do {
+       Status = EFI_SUCCESS;
+-      if(BlockingMode) {
++      if(Stream->UnGetKey == CHAR_NULL && BlockingMode) {
+         // Read a byte in Blocking mode
+         Status = gBS->WaitForEvent( 1, &Proto->WaitForKey, &Edex);
+       }
+@@ -679,12 +737,7 @@ da_ConPoll(
+     // STDIN: Only input is supported for this device
+     Status = da_ConRawRead (filp, &Stream->UnGetKey);
+     if(Status == RETURN_SUCCESS) {
+-      RdyMask = POLLIN;
+-      if ((Stream->UnGetKey <  TtyFunKeyMin)   ||
+-          (Stream->UnGetKey >= TtyFunKeyMax))
+-      {
+-        RdyMask |= POLLRDNORM;
+-      }
++      RdyMask = POLLIN | POLLRDNORM;
+     }
+     else {
+       Stream->UnGetKey  = CHAR_NULL;
+@@ -772,6 +825,13 @@ __Cons_construct(
+         Stream->NumWritten  = 0;
+         Stream->UnGetKey    = CHAR_NULL;
+ 
++        Stream->ctrlCharState.null_char_mode = 0;
++        Stream->ctrlCharState.state = CTRLCHAR_INIT;
++        Stream->ctrlCharState.digit_count = 0;
++        Stream->ctrlCharState.numargs = 0;
++        Stream->ctrlCharState.cmd = 0;
++        Stream->ctrlCharState.cmd_prefix = 0;          
++
+         if(Stream->Dev == NULL) {
+           continue;                 // No device for this stream.
+         }
+diff --git a/StdLib/LibC/Uefi/Devices/daConsole.inf b/StdLib/LibC/Uefi/Devices/daConsole.inf
+index 0ecee7e..e0f4b9a 100644
+--- a/StdLib/LibC/Uefi/Devices/daConsole.inf
++++ b/StdLib/LibC/Uefi/Devices/daConsole.inf
+@@ -29,7 +29,8 @@
+ 
+ [Sources]
+   Console/daConsole.c
+-
++  Console/daAnsi.c
++  
+ [Packages]
+   StdLib/StdLib.dec
+   StdLibPrivateInternalFiles/DoNotUse.dec
+diff --git a/StdLib/LibC/Uefi/InteractiveIO/IIO.c b/StdLib/LibC/Uefi/InteractiveIO/IIO.c
+index 547fdb3..d737971 100644
+--- a/StdLib/LibC/Uefi/InteractiveIO/IIO.c
++++ b/StdLib/LibC/Uefi/InteractiveIO/IIO.c
+@@ -41,6 +41,8 @@
+   #define R_INSTRUMENT  (void)
+ #endif  // IIO_C_DEBUG
+ 
++size_t da_ConKeyConvert(cFIFO *inbuf, CHAR16 *buffer, size_t buffer_size);
++
+ /** Read from an Interactive IO device.
+ 
+   NOTE: If _S_IWTTY is set, the internal buffer contains WIDE characters.
+@@ -88,16 +90,16 @@ IIO_Read(
+     if(filp->f_iflags & _S_IWTTY) {
+       // Data in InBuf is wide characters.  Convert to MBCS
+       // First, convert into a linear buffer
+-      NumRead = This->InBuf->Copy(This->InBuf, gMD->UString2, (INT32)UNICODE_STRING_MAX-1);
++      NumRead = da_ConKeyConvert(This->InBuf,
++                                 gMD->UString2,
++                                 (INT32)UNICODE_STRING_MAX-1);
++
+       gMD->UString2[NumRead] = 0;   // Ensure that the buffer is terminated
+       // Determine the needed space
+       XlateSz = EstimateWtoM((const wchar_t *)gMD->UString2, BufferSize, &Needed);
+ 
+       // Now translate this into MBCS in Buffer
+       NumRead = wcstombs((char *)Buffer, (const wchar_t *)gMD->UString2, XlateSz);
+-
+-      // Consume the translated characters
+-      (void) This->InBuf->Flush(This->InBuf, Needed);
+     }
+     else {
+       // Data in InBuf is narrow characters.  Use verbatim.
+@@ -412,6 +414,10 @@ New_cIIO(void)
+     IIO->Termio.c_oflag   = OPOST | ONLCR | ONOCR | ONLRET;
+     IIO->Termio.c_cflag   = 0;
+     IIO->Termio.c_lflag   = ECHO | ECHONL;
++
++    IIO->cpr_state = CPR_NONE;
++    IIO->cpr_row = 0;
++    IIO->cpr_column = 0;
+   }
+   return IIO;
+ }
+diff --git a/StdLib/LibC/Uefi/InteractiveIO/IIOwrite.c b/StdLib/LibC/Uefi/InteractiveIO/IIOwrite.c
+index ef52cc8..28ae874 100644
+--- a/StdLib/LibC/Uefi/InteractiveIO/IIOwrite.c
++++ b/StdLib/LibC/Uefi/InteractiveIO/IIOwrite.c
+@@ -148,10 +148,8 @@ IIO_WriteOne(struct __filedes *filp, cFIFO *OBuf, wchar_t InCh)
+           if((InCh >= 0) && (InCh < L' ')) {
+             // InCh contains a control character
+             if(OFlag & OCTRL) {
+-              wc[1]     = InCh + L'@';
+-              wc[0]     = L'^';
+-              numW      = 2;
+-              AdjColumn = 2;
++              wc[0]     = InCh;
++              AdjColumn = 1;
+             }
+             else {
+               numW = 0;   // Discard.  Not a UEFI supported control character.
+diff --git a/StdLib/LibC/Uefi/SysCalls.c b/StdLib/LibC/Uefi/SysCalls.c
+index 23b5984..26bb2a8 100644
+--- a/StdLib/LibC/Uefi/SysCalls.c
++++ b/StdLib/LibC/Uefi/SysCalls.c
+@@ -709,7 +709,7 @@ open(
+           if((oflags & O_TTY_INIT) && (filp->f_iflags & _S_ITTY) && (filp->devdata != NULL)) {
+             // Initialize the device's termios flags to a "sane" value
+             Termio = &((cIIO *)filp->devdata)->Termio;
+-            Termio->c_iflag = ICRNL | IGNSPEC;
++            Termio->c_iflag = ICRNL /* | IGNSPEC */;
+             Termio->c_oflag = OPOST | ONLCR | OXTABS | ONOEOT | ONOCR | ONLRET | OCTRL;
+             Termio->c_lflag = ECHO | ECHOE | ECHONL | ICANON;
+             Termio->c_cc[VERASE]  = 0x08;   // ^H Backspace
+diff --git a/StdLibPrivateInternalFiles/Include/Device/Console.h b/StdLibPrivateInternalFiles/Include/Device/Console.h
+index dce2630..f0d39da 100644
+--- a/StdLibPrivateInternalFiles/Include/Device/Console.h
++++ b/StdLibPrivateInternalFiles/Include/Device/Console.h
+@@ -18,6 +18,29 @@
+ #include  <kfile.h>
+ #include  <Device/Device.h>
+ 
++enum ctrlchar_t {
++  CTRLCHAR_INIT = 0,
++  CTRLCHAR_START,
++  CTRLCHAR_PARSE,
++  CTRLCHAR_NUMARG,
++  CTRLCHAR_CMD,
++  
++  CTRLCHAR_ERROR,
++  CTRLCHAR_END,
++};
++
++#define MAX_NUMARGS 15
++
++typedef struct {
++  UINT32 null_char_mode;
++  enum ctrlchar_t state;  
++  int digit_count;
++  int numargs;
++  CHAR16 cmd;
++  CHAR16 cmd_prefix;  
++  int numarg[MAX_NUMARGS];
++} CtrlCharState;
++
+ /*  The members Cookie through Abstraction, inclusive, are the same type and order
+     for all instance structures.
+ 
+@@ -34,6 +57,7 @@ typedef struct {
+   UINT64                      NumWritten;   ///< Number of characters Written.
+   __mbstate_t                 CharState;    ///< Character state for the byte stream passing through this device
+   CHAR16                      UnGetKey;     ///< One-key pushback, for poll().
++  CtrlCharState               ctrlCharState;
+ } ConInstance;
+ 
+ __BEGIN_DECLS
+diff --git a/StdLibPrivateInternalFiles/Include/Device/IIO.h b/StdLibPrivateInternalFiles/Include/Device/IIO.h
+index 4eb3623..ba190cf 100644
+--- a/StdLibPrivateInternalFiles/Include/Device/IIO.h
++++ b/StdLibPrivateInternalFiles/Include/Device/IIO.h
+@@ -33,6 +33,11 @@ typedef ssize_t (EFIAPI *cIIO_Write)     (struct __filedes *filp, const char *bu
+ 
+ typedef ssize_t (EFIAPI *cIIO_Echo)      (struct __filedes *filp, wchar_t EChar, BOOLEAN EchoIsOK);
+ 
++enum cprstate_t {
++  CPR_NONE = 0,
++  CPR_START
++};
++
+ /** Structure defining an instance of the Interactive I/O "class".  **/
+ struct _IIO_Instance {
+   /* ######## Public Functions ######## */
+@@ -69,6 +74,10 @@ struct _IIO_Instance {
+ 
+   // termios structure
+   struct termios  Termio;
++
++  enum cprstate_t cpr_state;
++  INT32 cpr_row;
++  INT32 cpr_column;  
+ };
+ 
+ // Helper Functions
+-- 
+2.46.1
+

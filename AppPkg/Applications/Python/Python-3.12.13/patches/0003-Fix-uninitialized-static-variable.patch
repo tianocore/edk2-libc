@@ -1,0 +1,29 @@
+From 7c4d3c6aa37c9b5c3b55d0e8a778c19309f888e6 Mon Sep 17 00:00:00 2001
+From: Dimitry Kloper <dimitry.kloper@intel.com>
+Date: Thu, 19 Sep 2024 17:13:59 +0300
+Subject: [PATCH 3/9] Fix uninitialized static variable.
+
+The IIO_GetInChar() function uses static BufCnt to keep track of buffered
+input characters. The problem that depending on compiler and optimization
+level the variable can be randomly initialized. This can lead to an
+unexpected behavior.
+---
+ StdLib/LibC/Uefi/InteractiveIO/IIOutilities.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/StdLib/LibC/Uefi/InteractiveIO/IIOutilities.c b/StdLib/LibC/Uefi/InteractiveIO/IIOutilities.c
+index 2e61cd1..a3b3aeb 100644
+--- a/StdLib/LibC/Uefi/InteractiveIO/IIOutilities.c
++++ b/StdLib/LibC/Uefi/InteractiveIO/IIOutilities.c
+@@ -80,7 +80,7 @@ IIO_GetInChar (
+   wint_t            RetVal;
+   wchar_t           InChar;
+ 
+-  static size_t     BufCnt;
++  static size_t     BufCnt = 0;
+ 
+   This      = filp->devdata;
+   InBuf     = This->InBuf;
+-- 
+2.46.0
+

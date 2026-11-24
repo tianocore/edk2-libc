@@ -1,0 +1,165 @@
+From 405427fd50963bb12c7f5af25daeb9fdb2359ee9 Mon Sep 17 00:00:00 2001
+From: Dimitry Kloper <dimitry.kloper@intel.com>
+Date: Sun, 29 Sep 2024 15:24:32 +0300
+Subject: [PATCH] Fix ioctl() vararg handling for Console and Shell devices
+
+LibC defines special devices Console and Shell that support pseudo POSIX
+device functionality. The interface is defined in
+StdLibPrivateInternalFiles/Include/kfile.h.
+
+Problem: When edk2-libc is compiled with gcc on Linux,
+the implementations of the interface fo_ioctl(..., va_list argp)
+won't work properly when handing varargs.
+
+Analysis: The information in this analysis is taken from
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=70955 thread.
+The problem is that 'va_list' (lower case) and associated macros assume
+default ABI (for now, order of arguments passed to a function). On Linux
+the default ABI is SYSV. The problem is that the interface is tagged as
+'EFIAPI', making it explicitly ms_abi. Thus the compiler will put
+wrong code when handing the varargs.
+
+Solution: From the thread above, there is a set of macros specific to ms_abi
+('__builtin_ms_va_list' and friends) and there are upper case variants
+('VA_LIST' and friends) that hide specifics and make the code portable.
+Thus, the fix is trivial - just substitute the lower case vararg macros with
+their upper case counterparts.
+---
+ StdLib/LibC/Uefi/Devices/Console/daConsole.c  |  2 +-
+ StdLib/LibC/Uefi/Devices/UefiShell/daShell.c  |  8 ++++----
+ StdLib/LibC/Uefi/Devices/Utility/DevGenisis.c |  2 +-
+ StdLib/LibC/Uefi/SysCalls.c                   | 12 ++++++------
+ StdLibPrivateInternalFiles/Include/kfile.h    |  4 ++--
+ 5 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/StdLib/LibC/Uefi/Devices/Console/daConsole.c b/StdLib/LibC/Uefi/Devices/Console/daConsole.c
+index ba031d6..b8d6c5e 100644
+--- a/StdLib/LibC/Uefi/Devices/Console/daConsole.c
++++ b/StdLib/LibC/Uefi/Devices/Console/daConsole.c
+@@ -479,7 +479,7 @@ EFIAPI
+ da_ConIoctl(
+   struct __filedes   *filp,
+   ULONGN              cmd,
+-  va_list             argp
++  VA_LIST             argp
+   )
+ {
+   errno   = ENODEV;
+diff --git a/StdLib/LibC/Uefi/Devices/UefiShell/daShell.c b/StdLib/LibC/Uefi/Devices/UefiShell/daShell.c
+index 06fcc3b..5ce5331 100644
+--- a/StdLib/LibC/Uefi/Devices/UefiShell/daShell.c
++++ b/StdLib/LibC/Uefi/Devices/UefiShell/daShell.c
+@@ -386,7 +386,7 @@ EFIAPI
+ da_ShellIoctl(
+   struct __filedes   *filp,
+   ULONGN              cmd,
+-  va_list             argp
++  VA_LIST             argp
+   )
+ {
+   EFI_FILE_INFO    *FileInfo      = NULL;
+@@ -404,8 +404,8 @@ da_ShellIoctl(
+       EFI_TIME        *ET;
+       int              mod = 0;
+ 
+-      TV = va_arg(argp, struct timeval*);
+-      if(TV[0].tv_sec != 0) {
++      TV = VA_ARG(argp, struct timeval*);
++      if(TV != NULL && TV[0].tv_sec != 0) {
+         ET = Time2Efi(TV[0].tv_sec);
+         if(ET != NULL) {
+           (void) memcpy(&FileInfo->LastAccessTime, ET, sizeof(EFI_TIME));
+@@ -414,7 +414,7 @@ da_ShellIoctl(
+           ++mod;
+         }
+       }
+-      if(TV[1].tv_sec != 0) {
++      if(TV != NULL && TV[1].tv_sec != 0) {
+         ET = Time2Efi(TV[1].tv_sec);
+         if(ET != NULL) {
+           (void) memcpy(&FileInfo->ModificationTime, ET, sizeof(EFI_TIME));
+diff --git a/StdLib/LibC/Uefi/Devices/Utility/DevGenisis.c b/StdLib/LibC/Uefi/Devices/Utility/DevGenisis.c
+index 8d95fba..c30f7b5 100644
+--- a/StdLib/LibC/Uefi/Devices/Utility/DevGenisis.c
++++ b/StdLib/LibC/Uefi/Devices/Utility/DevGenisis.c
+@@ -49,7 +49,7 @@ int     EFIAPI fbadop_stat   (struct __filedes *filp, struct stat *StatBuf, void
+   return -1;
+ }
+ 
+-int     EFIAPI fbadop_ioctl  (struct __filedes *filp, ULONGN Cmd, va_list argp)
++int     EFIAPI fbadop_ioctl  (struct __filedes *filp, ULONGN Cmd, VA_LIST argp)
+ {
+   errno = EPERM;
+   return -1;
+diff --git a/StdLib/LibC/Uefi/SysCalls.c b/StdLib/LibC/Uefi/SysCalls.c
+index 23b5984..aab2bcb 100644
+--- a/StdLib/LibC/Uefi/SysCalls.c
++++ b/StdLib/LibC/Uefi/SysCalls.c
+@@ -1083,9 +1083,9 @@ ioctl(
+ {
+   int                 retval = -1;
+   struct __filedes   *filp;
+-  va_list             argp;
++  VA_LIST             argp;
+ 
+-  va_start(argp, request);
++  VA_START(argp, request);
+ 
+   if(ValidateFD( fd, VALID_OPEN)) {
+     filp = &gMD->fdarray[fd];
+@@ -1108,7 +1108,7 @@ ioctl(
+   else {
+     errno   =  EBADF;
+   }
+-  va_end(argp);
++  VA_END(argp);
+ 
+   return retval;
+ }
+@@ -1420,18 +1420,18 @@ va_Utimes(
+   )
+ {
+   struct __filedes   *filp;
+-  va_list             ap;
++  VA_LIST             ap;
+   int                 fd;
+   int                 retval  = -1;
+ 
+-  va_start(ap, path);
++  VA_START(ap, path);
+   fd = open(path, O_RDWR, 0);
+   if(fd >= 0) {
+     filp = &gMD->fdarray[fd];
+     retval = filp->f_ops->fo_ioctl( filp, FIOSETIME, ap);
+     close(fd);
+   }
+-  va_end(ap);
++  VA_END(ap);
+   return retval;
+ }
+ 
+diff --git a/StdLibPrivateInternalFiles/Include/kfile.h b/StdLibPrivateInternalFiles/Include/kfile.h
+index 67bff56..dbc473e 100644
+--- a/StdLibPrivateInternalFiles/Include/kfile.h
++++ b/StdLibPrivateInternalFiles/Include/kfile.h
+@@ -119,7 +119,7 @@ struct fileops {
+ 
+   /* Call the fbadop_* version of these functions if not implemented by the device. */
+   int     (EFIAPI *fo_stat)     (struct __filedes *filp, struct stat *StatBuf, void *Buf);
+-  int     (EFIAPI *fo_ioctl)    (struct __filedes *filp, ULONGN Cmd, va_list argp);
++  int     (EFIAPI *fo_ioctl)    (struct __filedes *filp, ULONGN Cmd, VA_LIST argp);
+   int     (EFIAPI *fo_delete)   (struct __filedes *filp);
+   int     (EFIAPI *fo_rmdir)    (struct __filedes *filp);
+   int     (EFIAPI *fo_mkdir)    (const char *path, __mode_t perms);
+@@ -174,7 +174,7 @@ short   EFIAPI fnullop_poll  (struct __filedes *filp, short Events);
+ int     EFIAPI fnullop_flush (struct __filedes *filp);
+ 
+ int     EFIAPI fbadop_stat   (struct __filedes *filp, struct stat *StatBuf, void *Buf);
+-int     EFIAPI fbadop_ioctl  (struct __filedes *filp, ULONGN Cmd, va_list argp);
++int     EFIAPI fbadop_ioctl  (struct __filedes *filp, ULONGN Cmd, VA_LIST argp);
+ int     EFIAPI fbadop_delete (struct __filedes *filp);
+ int     EFIAPI fbadop_rmdir  (struct __filedes *filp);
+ int     EFIAPI fbadop_mkdir  (const char *path, __mode_t perms);
+-- 
+2.46.1
+
