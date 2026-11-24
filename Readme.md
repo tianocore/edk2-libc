@@ -23,9 +23,31 @@ The majority of the content in the EDK II open source project uses a
 contains the following components that are covered by additional licenses:
 
 * [AppPkg/Applications/Python/Python-3.6.8](AppPkg/Applications/Python/Python-3.6.8/LICENSE)
+* [AppPkg/Applications/Python/Python-3.12.13](AppPkg/Applications/Python/Python-3.12.13/LICENSE)
 
 The EDK II LIBC Project is composed of packages.  The maintainers for each
 package are listed in [Maintainers.txt](Maintainers.txt).
+
+# Python on UEFI (AppPkg)
+
+CPython ports for the UEFI Shell live under `AppPkg/Applications/Python/`. Build
+from an edk2 workspace with `PACKAGES_PATH` including both **edk2** and
+**edk2-libc**, and `EDK2_LIBC_PATH` set to this repository.
+
+| Version | Build flag | Application INF | Getting started |
+|---------|------------|-----------------|-----------------|
+| 3.6.8 | `-D BUILD_PYTHON368` | `Python-3.6.8/Python368.inf` | [Py368ReadMe.txt](AppPkg/Applications/Python/Python-3.6.8/Py368ReadMe.txt), [GCCCompilationBKMs.rst](AppPkg/Applications/Python/Python-3.6.8/GCCCompilationBKMs.rst), [Windows VS2022 guide](AppPkg/Applications/Python/Python-3.6.8/Python368_Windows_VS2022_Build_Guide.md) |
+| 3.12.13 | `-D BUILD_PYTHON312` ([FULL](AppPkg/Applications/Python/Python-3.12.13/Py312ReadMe.txt): add `-D BUILD_PYTHON312_FULL=TRUE`) | `Python-3.12.13/Python312.inf` | [Py312ReadMe.txt](AppPkg/Applications/Python/Python-3.12.13/Py312ReadMe.txt), [GCCCompilationBKMs.md](AppPkg/Applications/Python/Python-3.12.13/GCCCompilationBKMs.md), [Windows VS2022 guide](AppPkg/Applications/Python/Python-3.12.13/Python312_Windows_VS2022_Build_Guide.md) |
+
+Example (GCC / X64, FULL):
+
+```text
+build -a X64 -b NOOPT -t GCC -p AppPkg/AppPkg.dsc -D BUILD_PYTHON312 -D BUILD_PYTHON312_FULL=TRUE
+```
+
+Python **3.12.13** also requires applying StdLib patches from
+`AppPkg/Applications/Python/Python-3.12.13/patches/` before the build
+(do not commit patched `StdLib/`); see Py312ReadMe.txt.
 
 # Resources
 * [TianoCore](http://www.tianocore.org)
