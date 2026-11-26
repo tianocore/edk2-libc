@@ -265,9 +265,10 @@ realloc(void *Ptr, size_t ReqSize)
     RetVal = malloc(NewSize); // Get the NEW memory region
     if( Ptr != NULL) {          // If there is an OLD region...
       if( RetVal != NULL) {     // and the NEW region was successfully allocated
-        NumCpy = OldSize;
-        if( OldSize > NewSize) {
-          NumCpy = NewSize;
+        // Head->Size includes the CPOOL_HEAD; copy only the old data bytes.
+        NumCpy = OldSize - sizeof(CPOOL_HEAD);
+        if( NumCpy > ReqSize) {
+          NumCpy = ReqSize;
         }
         (VOID)CopyMem( RetVal, Ptr, NumCpy);  // Copy old data to the new region.
         free( Ptr);                           // and reclaim the old region.
