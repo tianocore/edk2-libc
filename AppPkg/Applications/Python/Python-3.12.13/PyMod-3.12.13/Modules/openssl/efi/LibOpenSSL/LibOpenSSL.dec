@@ -1,0 +1,14 @@
+## @file
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+
+[Defines]
+  DEC_SPECIFICATION              = 0x00010005
+  PACKAGE_NAME                   = LibOpenSSL
+  PACKAGE_GUID                   = ff39aec5-d6ba-4c0e-8e7d-e663792ae342
+  PACKAGE_VERSION                = 1.1.1f
+
+[Includes]
+  ../include
+  ../../include

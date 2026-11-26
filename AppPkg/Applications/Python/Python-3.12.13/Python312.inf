@@ -1,0 +1,1117 @@
+## @file
+# Python312.inf — AppPkg monolithic FULL module (vendored zlib/ctypes/OpenSSL/libffi).
+#
+# ENTRY_POINT = UefiMain. MIN build uses Python312_MIN.inf.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                 = 0x00010016
+  BASE_NAME                   = Python312
+  FILE_GUID                   = 1c13d89b-76e2-4dd1-8acd-d542b8009c4f
+  MODULE_TYPE                 = UEFI_APPLICATION
+  VERSION_STRING              = 0.1
+  ENTRY_POINT                 = UefiMain
+
+  DEFINE PYTHON_VERSION       = 3.12.13
+  DEFINE LIBFFI_INC           = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/libffi/include
+  DEFINE OPENSSL_ROOT       = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/openssl
+  DEFINE LIBFFI_INT_INC       = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/libffi/libffi/include
+  # MSVC _ctypes uses libffi_msvc (Python368 pattern), not Modules/libffi headers
+  DEFINE LIBFFI_MSVC_INC      = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/_ctypes/libffi_msvc
+  # Monolithic FULL module. MIN build uses Python312_MIN.inf
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ShellPkg/ShellPkg.dec
+  StdLib/StdLib.dec
+  AppPkg/AppPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  DebugLib
+# Port I/O for the edk2 module's readio/writeio. Resolved by AppPkg.dsc to
+# BaseIoLibIntrinsic. BaseLib, used by the same module for AsmReadMsr64 and
+# AsmCpuidEx, needs no entry: it is already in UefiLib's dependency closure,
+# which is why edk2excep.c can call EnableInterrupts() today.
+  IoLib
+# PCI config space for readpci/writepci. AppPkg.dsc maps this to BasePciLibCf8,
+# so accesses go via 0xCF8/0xCFC and extended config space (offset >= 0x100) is
+# out of reach — edk2module.c range-checks the offset rather than letting
+# BasePciCf8Lib ASSERT. Remapping this to an ECAM PciLib is what would extend
+# the reach; no code in edk2module.c would need to change.
+  PciLib
+  UefiBootServicesTableLib
+  UefiRuntimeServicesTableLib
+  LibC
+  LibString
+  LibStdio
+  LibGdtoa
+  LibMath
+  LibWchar
+  LibGen
+  LibNetUtil
+  DevMedia
+  BsdSocketLib
+  EfiSocketLib
+
+[Protocols]
+  gEfiCpuArchProtocolGuid
+  gEfiLoadedImageProtocolGuid
+  gEfiSimpleTextInputExProtocolGuid
+  gEfiRngProtocolGuid
+  gEfiShellProtocolGuid
+  gEfiMpServiceProtocolGuid           ## CONSUMES
+
+[FixedPcd]
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x0F
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000040
+
+[Sources]
+
+# --- UEFI glue (from Python312.inf) ---
+  PyMod-3.12.13/efi/src/edk2main.c
+  PyMod-3.12.13/efi/src/py312_openssl_uefi.c
+  PyMod-3.12.13/efi/src/edk2stack.nasm
+  PyMod-3.12.13/efi/src/dummy_dlfcn.c
+  PyMod-3.12.13/efi/src/dummy_unistd.c
+  PyMod-3.12.13/efi/src/dummy_pthread.c
+  PyMod-3.12.13/efi/src/dummy_mmap.c
+  PyMod-3.12.13/efi/src/edk2console.c
+  PyMod-3.12.13/efi/src/edk2excep.c
+  PyMod-3.12.13/efi/src/edk2handler.nasm
+  PyMod-3.12.13/efi/src/urandom.c
+  PyMod-3.12.13/efi/src/time.c
+  PyMod-3.12.13/efi/src/fs.c
+  PyMod-3.12.13/efi/src/environ.c
+  PyMod-3.12.13/efi/src/cmath.c
+
+# --- Programs ---
+  PyMod-3.12.13/Programs/python.c
+
+# --- Inittab ---
+  PyMod-3.12.13/Modules/config.c
+
+# --- Core (PythonCoreLib) ---
+  PyMod-3.12.13/Modules/gcmodule.c
+  Modules/getbuildinfo.c
+  PyMod-3.12.13/Modules/getpath.c
+  PyMod-3.12.13/Modules/main.c
+  Objects/abstract.c
+  Objects/boolobject.c
+  Objects/bytearrayobject.c
+  Objects/bytes_methods.c
+  Objects/bytesobject.c
+  Objects/call.c
+  Objects/capsule.c
+  Objects/cellobject.c
+  Objects/classobject.c
+  Objects/codeobject.c
+  PyMod-3.12.13/Objects/complexobject.c
+  Objects/descrobject.c
+  Objects/dictobject.c
+  Objects/enumobject.c
+  Objects/exceptions.c
+  Objects/fileobject.c
+  PyMod-3.12.13/Objects/floatobject.c
+  Objects/frameobject.c
+  Objects/funcobject.c
+  Objects/genericaliasobject.c
+  Objects/genobject.c
+  Objects/interpreteridobject.c
+  Objects/iterobject.c
+  Objects/listobject.c
+  Objects/longobject.c
+  Objects/memoryobject.c
+  Objects/methodobject.c
+  Objects/moduleobject.c
+  Objects/namespaceobject.c
+  Objects/object.c
+  Objects/obmalloc.c
+  Objects/odictobject.c
+  Objects/picklebufobject.c
+  Objects/rangeobject.c
+  Objects/setobject.c
+  Objects/sliceobject.c
+  Objects/structseq.c
+  Objects/tupleobject.c
+  Objects/typeobject.c
+  Objects/typevarobject.c
+  Objects/unicodectype.c
+  Objects/unicodeobject.c
+  Objects/unionobject.c
+  Objects/weakrefobject.c
+  Parser/action_helpers.c
+  Parser/parser.c
+  Parser/peg_api.c
+  Parser/pegen.c
+  Parser/pegen_errors.c
+  Parser/string_parser.c
+  Parser/token.c
+  Parser/myreadline.c
+  PyMod-3.12.13/Parser/tokenizer.c
+  Python/Python-ast.c
+  Python/Python-tokenize.c
+  Python/_warnings.c
+  Python/asdl.c
+  Python/asm_trampoline.S | GCC
+  Python/assemble.c
+  Python/ast.c
+  Python/ast_opt.c
+  Python/ast_unparse.c
+  Python/bltinmodule.c
+  PyMod-3.12.13/Python/bootstrap_hash.c
+  Python/ceval.c
+  Python/ceval_gil.c
+  Python/codecs.c
+  Python/compile.c
+  Python/context.c
+  PyMod-3.12.13/Python/deepfreeze/deepfreeze.c
+  Python/dtoa.c
+  PyMod-3.12.13/Python/dynamic_annotations.c
+  Python/errors.c
+  PyMod-3.12.13/Python/fileutils.c
+  Python/flowgraph.c
+  Python/formatter_unicode.c
+  Python/frame.c
+  PyMod-3.12.13/Python/frozen.c
+  Python/frozenmain.c
+  Python/future.c
+  PyMod-3.12.13/Python/getargs.c
+  Python/getcompiler.c
+  Python/getcopyright.c
+  Python/getopt.c
+  Python/getplatform.c
+  Python/getversion.c
+  Python/hamt.c
+  Python/hashtable.c
+  Python/import.c
+  Python/importdl.c
+  Python/initconfig.c
+  Python/instrumentation.c
+  Python/intrinsics.c
+  Python/legacy_tracing.c
+  Python/marshal.c
+  Python/modsupport.c
+  PyMod-3.12.13/Python/mysnprintf.c
+  Python/mystrtoul.c
+  Python/pathconfig.c
+  Python/perf_trampoline.c
+  Python/preconfig.c
+  Python/pyarena.c
+  Python/pyctype.c
+  Python/pyfpe.c
+  PyMod-3.12.13/Python/pyhash.c
+  PyMod-3.12.13/Python/pylifecycle.c
+  Python/pymath.c
+  PyMod-3.12.13/Python/pystate.c
+  Python/pystrcmp.c
+  Python/pystrhex.c
+  Python/pystrtod.c
+  Python/pythonrun.c
+  PyMod-3.12.13/Python/pytime.c
+  Python/specialize.c
+  Python/structmember.c
+  Python/suggestions.c
+  Python/symtable.c
+  PyMod-3.12.13/Python/sysmodule.c
+  Python/thread.c
+  Python/traceback.c
+  Python/tracemalloc.c
+
+# --- Builtin (PythonBuiltinLib) ---
+  Modules/atexitmodule.c
+  PyMod-3.12.13/Modules/faulthandler.c
+  PyMod-3.12.13/Modules/posixmodule.c
+# Platform primitives for firmware tooling (CHIPSEC). FULL only by design: not
+# in Python312_MIN.inf, and its config.c inittab entry is gated on
+# BUILD_PYTHON312_FULL to match.
+  PyMod-3.12.13/Modules/edk2module.c
+  PyMod-3.12.13/Modules/signalmodule.c
+  Modules/_tracemalloc.c
+  Modules/_codecsmodule.c
+  Modules/_collectionsmodule.c
+  Modules/errnomodule.c
+  Modules/_io/_iomodule.c
+  Modules/_io/iobase.c
+  Modules/_io/fileio.c
+  Modules/_io/bytesio.c
+  PyMod-3.12.13/Modules/_io/bufferedio.c
+  Modules/_io/textio.c
+  Modules/_io/stringio.c
+  Modules/itertoolsmodule.c
+  Modules/_sre/sre.c
+  Modules/_threadmodule.c
+  PyMod-3.12.13/Modules/timemodule.c
+  Modules/_weakref.c
+  Modules/_abc.c
+  Modules/_functoolsmodule.c
+  Modules/_localemodule.c
+  Modules/_operator.c
+  Modules/_stat.c
+  Modules/symtablemodule.c
+  PyMod-3.12.13/Modules/pwdmodule.c
+
+# --- Ext MIN (PythonExtLib minus ffi/ssl/zlib/readline) ---
+  Modules/_asynciomodule.c
+  Modules/_bisectmodule.c
+  Modules/_blake2/blake2b_impl.c
+  Modules/_blake2/blake2module.c
+  Modules/_blake2/blake2s_impl.c
+  Modules/_contextvarsmodule.c
+  Modules/_csv.c
+  PyMod-3.12.13/Modules/_datetimemodule.c
+  PyMod-3.12.13/Modules/_decimal/_decimal.c
+  Modules/_decimal/libmpdec/basearith.c
+  Modules/_decimal/libmpdec/constants.c
+  Modules/_decimal/libmpdec/context.c
+  Modules/_decimal/libmpdec/convolute.c
+  Modules/_decimal/libmpdec/crt.c
+  Modules/_decimal/libmpdec/difradix2.c
+  Modules/_decimal/libmpdec/fnt.c
+  Modules/_decimal/libmpdec/fourstep.c
+  Modules/_decimal/libmpdec/io.c
+  Modules/_decimal/libmpdec/mpalloc.c
+  Modules/_decimal/libmpdec/mpdecimal.c
+  Modules/_decimal/libmpdec/numbertheory.c
+  Modules/_decimal/libmpdec/sixstep.c
+  Modules/_decimal/libmpdec/transpose.c
+  Modules/_elementtree.c
+  Modules/_hacl/Hacl_Hash_MD5.c
+  Modules/_hacl/Hacl_Hash_SHA1.c
+  Modules/_hacl/Hacl_Hash_SHA2.c
+  Modules/_hacl/Hacl_Hash_SHA3.c
+  Modules/_heapqmodule.c
+  Modules/_json.c
+  Modules/_lsprof.c
+  PyMod-3.12.13/Modules/_multiprocessing/multiprocessing.c
+  Modules/_multiprocessing/posixshmem.c
+  Modules/_multiprocessing/semaphore.c
+  Modules/_opcode.c
+  PyMod-3.12.13/Modules/_pickle.c
+  PyMod-3.12.13/Modules/_posixsubprocess.c
+  Modules/_queuemodule.c
+  Modules/_randommodule.c
+  Modules/sha3module.c
+  Modules/_statisticsmodule.c
+  Modules/_struct.c
+  Modules/_typingmodule.c
+  Modules/_xxinterpchannelsmodule.c
+  Modules/_xxsubinterpretersmodule.c
+  Modules/_zoneinfo.c
+  Modules/arraymodule.c
+  Modules/audioop.c
+  PyMod-3.12.13/Modules/binascii.c
+  Modules/cjkcodecs/_codecs_cn.c
+  Modules/cjkcodecs/_codecs_hk.c
+  Modules/cjkcodecs/_codecs_iso2022.c
+  Modules/cjkcodecs/_codecs_jp.c
+  Modules/cjkcodecs/_codecs_kr.c
+  Modules/cjkcodecs/_codecs_tw.c
+  Modules/cjkcodecs/multibytecodec.c
+  PyMod-3.12.13/Modules/cmathmodule.c
+  PyMod-3.12.13/Modules/expat/xmlparse.c
+  Modules/expat/xmlrole.c
+  Modules/expat/xmltok.c
+  PyMod-3.12.13/Modules/mathmodule.c
+  Modules/md5module.c
+  PyMod-3.12.13/Modules/mmapmodule.c
+  Modules/pyexpat.c
+  Modules/rotatingtree.c
+  Modules/selectmodule.c
+  Modules/sha1module.c
+  Modules/sha2module.c
+  PyMod-3.12.13/Modules/socketmodule.c
+  PyMod-3.12.13/Modules/termios.c
+  Modules/unicodedata.c
+  Modules/xxlimited.c
+  Modules/xxlimited_35.c
+  Modules/xxsubtype.c
+
+  Modules/zlibmodule.c
+
+# Vendored zlib 1.2.11 (PyMod — same layout as 3.6.8 Modules/zlib)
+PyMod-$(PYTHON_VERSION)/Modules/zlib
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/adler32.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/compress.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/crc32.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/deflate.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/gzclose.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/gzlib.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/gzread.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/gzwrite.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/infback.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/inffast.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/inflate.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/inftrees.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/trees.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/uncompr.c
+  PyMod-$(PYTHON_VERSION)/Modules/zlib/zutil.c
+
+# pyreadline under PyMod/Modules/readline (staged by create_python_pkg.*)
+#  (uses built-in edk2console; not Modules/readline.c / GNU readline)
+
+# Vendored libffi + UEFI _ctypes (GCC)
+PyMod-$(PYTHON_VERSION)/Modules/_ctypes/_ctypes.c | GCC
+PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callbacks.c | GCC
+PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callproc.c | GCC
+PyMod-$(PYTHON_VERSION)/Modules/_ctypes/cfield.c | GCC
+PyMod-$(PYTHON_VERSION)/Modules/_ctypes/stgdict.c | GCC
+# No malloc_closure.c on GCC — use libffi ffi_closure_alloc (HAVE_FFI_CLOSURE_ALLOC).
+PyMod-$(PYTHON_VERSION)/Modules/_ctypes/_ctypes_test.c | GCC
+
+PyMod-$(PYTHON_VERSION)/Modules/libffi
+  PyMod-$(PYTHON_VERSION)/Modules/libffi/src/closures.c | GCC
+  PyMod-$(PYTHON_VERSION)/Modules/libffi/src/debug.c | GCC
+  PyMod-$(PYTHON_VERSION)/Modules/libffi/src/prep_cif.c | GCC
+  PyMod-$(PYTHON_VERSION)/Modules/libffi/src/raw_api.c | GCC
+  PyMod-$(PYTHON_VERSION)/Modules/libffi/src/types.c | GCC
+  PyMod-$(PYTHON_VERSION)/Modules/libffi/src/x86/ffi64.c | GCC
+  PyMod-$(PYTHON_VERSION)/Modules/libffi/src/x86/ffiw64.c | GCC
+  PyMod-$(PYTHON_VERSION)/Modules/libffi/src/x86/unix64.S | GCC
+  PyMod-$(PYTHON_VERSION)/Modules/libffi/src/x86/win64.S | GCC
+
+# VS2022: libffi_msvc + _ctypes (Python368.inf pattern)
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/_ctypes.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/stgdict.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/libffi_msvc/prep_cif.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/libffi_msvc/types.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/malloc_closure.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/libffi_msvc/ffi.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/cfield.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callproc.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callbacks.c | MSFT
+
+# Vendored OpenSSL 1.1.1f libcrypto + _hashlib (_hashopenssl.c)
+  PyMod-3.12.13/Modules/_hashopenssl.c
+
+# libcrypto sources — from LibOpenSSL.inf minus ssl/; plus rand_rdrand.nasm (rand_efi.c)
+PyMod-$(PYTHON_VERSION)/Modules/openssl
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/engines/e_padlock.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/engines/e_capi.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_rsp_utils.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_rsp_print.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_req_print.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_rsp_verify.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_req_utils.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_verify_ctx.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_rsp_sign.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ts/ts_conf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/threads_none.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/md4/md4_dgst.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/md4/md4_one.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/mem_sec.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sha/sha512.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sha/sha256.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sha/sha1dgst.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sha/sha1_one.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sha/keccak1600.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/siphash/siphash_pmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/siphash/siphash.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/siphash/siphash_ameth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cpt_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/mem_clr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/o_time.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_x509v3.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_b64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_oct.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_prn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_policy.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_log.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_sct_ctx.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_vfy.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ct/ct_sct.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/mem_dbg.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ex_data.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_akeya.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_pci.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_tlsf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_extku.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_admis.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_ia5.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/pcy_map.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/pcy_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_addr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_sxnet.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_pku.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_bcons.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_ncons.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_pcons.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_purp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/pcy_node.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_cpols.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_conf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_crld.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_pcia.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_prn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/pcy_data.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_genn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/pcy_cache.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_info.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_enum.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_utl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_int.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_alt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_asid.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_pmaps.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_akey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/pcy_tree.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_bitst.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509v3/v3_skey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/txt_db/txt_db.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/stack/stack.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cryptlib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/conf/conf_sap.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/conf/conf_mod.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/conf/conf_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/conf/conf_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/conf/conf_mall.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/conf/conf_api.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/conf/conf_def.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/conf/conf_ssl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs7/pk7_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs7/pk7_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs7/pkcs7err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs7/pk7_attr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs7/pk7_doit.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs7/pk7_smime.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs7/pk7_mime.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs7/bio_pk7.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_ossl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_pmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_meth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_key.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_prn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_gen.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_sign.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_vrf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_ameth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_depr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dsa/dsa_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecdsa_sign.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecp_nistp521.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/eck_prn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_ameth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_pmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecp_nistp256.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecdh_kdf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecp_mont.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecdsa_ossl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecdsa_vrf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecp_nistputil.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecx_meth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_curve.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/curve448/curve448_tables.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/curve448/arch_32/f_impl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/curve448/eddsa.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/curve448/scalar.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/curve448/f_generic.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/curve448/curve448.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec2_smpl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_key.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecdh_ossl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_print.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecp_smpl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecp_nist.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_oct.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecp_nistp224.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec2_oct.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ecp_oct.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_cvt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_mult.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_kmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/ec_check.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ec/curve25519.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bf/bf_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bf/bf_ofb64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bf/bf_skey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bf/bf_cfb64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bf/bf_ecb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/poly1305/poly1305.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/poly1305/poly1305_pmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/poly1305/poly1305_ameth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_ameth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_gen.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_prn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_meth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_key.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_pmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_kdf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_check.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_rfc5114.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_depr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/dh/dh_rfc7919.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sm4/sm4.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sm3/sm3.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sm3/m_sm3.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/uid.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/ocsp_ht.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/ocsp_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/v3_ocsp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/ocsp_vfy.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/ocsp_ext.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/ocsp_srv.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/ocsp_prn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/ocsp_asn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/ocsp_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ocsp/ocsp_cl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/blake2/blake2b.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/blake2/blake2s.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/blake2/m_blake2b.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/blake2/m_blake2s.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/getenv.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_nist.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_recp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_ctx.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_depr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_mul.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_mpi.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_blind.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_mod.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_srp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_kron.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_rand.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_x931p.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_exp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_exp2.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_asm.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_sqr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_shift.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_sqrt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_print.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_word.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_gcd.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_mont.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_dh.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_prime.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_intern.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_const.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_div.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_add.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bn/bn_gf2m.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/o_fips.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/o_dir.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/comp/c_zlib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/comp/comp_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/comp/comp_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_ameth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_saos.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_x931.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_depr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_chk.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_none.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_ssl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_mp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_pk1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_ossl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_prn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_x931g.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_pss.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_pmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_sign.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_meth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_crpt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_gen.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_oaep.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rsa/rsa_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/buffer/buffer.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/buffer/buf_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/camellia/cmll_ctr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/camellia/cmll_cfb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/camellia/cmll_cbc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/camellia/cmll_misc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/camellia/cmll_ofb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/camellia/cmll_ecb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/camellia/camellia.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/md5/md5_one.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/md5/md5_dgst.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/cbc_cksm.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/ofb64enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/ecb_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/cfb64enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/cbc_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/des_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/xcbc_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/pcbc_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/ecb3_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/fcrypt_b.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/qud_cksm.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/rand_key.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/set_key.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/cfb_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/cfb64ede.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/str2key.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/ofb64ede.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/fcrypt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/des/ofb_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/threads_none.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rc4/rc4_skey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rc4/rc4_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sm2/sm2_sign.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sm2/sm2_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sm2/sm2_pmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/sm2/sm2_crypt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/objects/o_names.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/objects/obj_dat.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/objects/obj_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/objects/obj_xref.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/objects/obj_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ebcdic.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/hmac/hmac.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/hmac/hm_ameth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/hmac/hm_pmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/x_int64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_strex.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/x_sig.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_strnid.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/tasn_utl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/evp_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/t_pkey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/i2d_pu.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/bio_ndef.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/x_info.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/t_bitst.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/t_spki.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/x_bignum.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_utctm.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_i2d_fp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/x_pkey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_int.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/asn1_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/asn_mime.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_digest.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_sign.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/n_pkey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/tasn_scn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_dup.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_utf8.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/asn1_par.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/tasn_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_gentm.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/asn1_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/tasn_dec.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/tasn_typ.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_print.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/asn_mstbl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/d2i_pr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/f_int.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/p5_scrypt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/f_string.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/asn1_item_list.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/tasn_fre.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_verify.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/ameth_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/d2i_pu.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/p5_pbev2.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/p8_pkey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/asn_pack.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/asn_moid.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/x_algor.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/p5_pbe.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_mbstr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/tasn_prn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/i2d_pr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_time.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/x_long.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/x_spki.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/tasn_new.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/nsseq.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_octet.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_bitstr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_object.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/x_val.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/asn1_gen.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/bio_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_type.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/asn1/a_d2i_fp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_kiss.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_p8e.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/pk12err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_crpt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_attr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_key.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_npas.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_crt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_sbag.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_decr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_add.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_init.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_utl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_mutl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_p8d.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pkcs12/p12_asn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/srp/srp_vfy.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/srp/srp_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/threads_win.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rand/rand_egd.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rand/rand_vms.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rand/drbg_ctr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rand/rand_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rand/randfile.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rand/drbg_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rand/rand_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rand/rand_win.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/kdf/kdf_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/kdf/hkdf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/kdf/scrypt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/kdf/tls1_prf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ui/ui_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ui/ui_null.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/xts128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/cbc128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/gcm128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/ocb128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/wrap128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/cfb128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/ctr128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/ofb128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/ccm128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/modes/cts128.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/lhash/lhash.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/lhash/lh_stats.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bio_cb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bf_lbuf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bf_null.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_log.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_bio.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bf_nbio.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bio_meth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/b_dump.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bio_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_sock.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bf_buff.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_null.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_fd.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bio_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_conn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_file.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/b_sock2.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_acpt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_mem.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/b_print.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/b_sock.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/bss_dgram.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/bio/b_addr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/init.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/o_init.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ctype.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ripemd/rmd_dgst.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/ripemd/rmd_one.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cast/c_skey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cast/c_ecb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cast/c_cfb64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cast/c_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cast/c_ofb64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/o_str.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/o_fopen.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/async/arch/async_null.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/async/arch/async_posix.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/async/arch/async_win.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/async/async_wait.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/async/async.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/async/async_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/mem.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cversion.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/store/store_init.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/store/store_register.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/store/store_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/store/store_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/store/loader_file.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/store/store_strings.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/seed/seed_cfb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/seed/seed_ofb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/seed/seed_cbc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/seed/seed.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/seed/seed_ecb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/idea/i_ofb64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/idea/i_cbc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/idea/i_skey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/idea/i_ecb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/idea/i_cfb64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/err/err_prn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/err/err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/err/err_all.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/aes/aes_ofb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/aes/aes_cfb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/aes/aes_ecb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/aes/aes_core.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/aes/aes_misc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/aes/aes_cbc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/aes/aes_ige.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/aes/aes_wrap.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/aria/aria.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/tb_rsa.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/tb_digest.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_pkey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/tb_asnmth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_openssl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_ctrl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/tb_dh.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_init.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/tb_rand.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_fat.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/tb_eckey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_list.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/tb_cipher.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_table.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/tb_pkmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_rdrand.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_all.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/eng_cnf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/engine/tb_dsa.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cmac/cmac.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cmac/cm_pmeth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cmac/cm_ameth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rc2/rc2ofb64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rc2/rc2cfb64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rc2/rc2_cbc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rc2/rc2_ecb.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/rc2/rc2_skey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/chacha/chacha_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/t_req.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_d2.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x_exten.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x_req.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x_x509.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/by_file.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x_crl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/by_dir.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/t_crl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x_attrib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_lu.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_obj.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_req.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_v3.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509spki.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_set.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x_pubkey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509rset.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_vfy.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_r2x.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_ext.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x_name.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_vpm.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509type.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/t_x509.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509name.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_cmp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_meth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_txt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x_all.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x_x509a.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_trs.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509cset.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_att.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/x509/x509_def.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/mdc2/mdc2_one.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/mdc2/mdc2dgst.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/whrlpool/wp_dgst.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/whrlpool/wp_block.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_all.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_sign.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_info.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_xaux.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_oth.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_pkey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pvkfmt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_x509.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/pem/pem_pk8.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_aes_cbc_hmac_sha1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/encode.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_md4.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_md5.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_wp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/p_sign.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_ripemd.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/pbe_scrypt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/p5_crpt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_mdc2.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_xcbc_d.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/evp_cnf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_des3.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/bio_md.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_md2.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_seed.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/p_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_null.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/p_verify.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_sha3.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_rc2.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/p_seal.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_null.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/p_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/pmeth_fn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/evp_pkey.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/evp_pbe.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_sigver.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/names.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/evp_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/p_open.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_rc4_hmac_md5.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_md5_sha1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/pmeth_gn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/bio_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/digest.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_cast.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_rc5.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_aria.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/cmeth_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_chacha20_poly1305.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_rc4.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/evp_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_bf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/evp_key.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/evp_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_sm4.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/m_sha1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_des.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/pmeth_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_idea.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/bio_b64.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/c_allc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/p_dec.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_camellia.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_old.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_aes.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/c_alld.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/e_aes_cbc_hmac_sha256.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/p5_crpt2.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/evp/bio_ok.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_cd.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_pwri.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_kari.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_dd.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_sd.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_att.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_io.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_env.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_ess.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/crypto/cms/cms_smime.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/efi/src/eng_dyn.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/efi/src/ui_openssl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/efi/src/rand_efi.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/efi/src/openssl_uefi_msvc.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/efi/src/rand_rdrand.nasm
+
+# libssl + _ssl (same vendored OpenSSL tree)
+  PyMod-3.12.13/Modules/_ssl.c
+
+# libssl sources (44 files) — from LibOpenSSL.inf ssl/ only
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_ciph.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/s3_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/d1_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_init.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/methods.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/s3_cbc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/tls13_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/t1_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/t1_trce.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/statem/statem.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/statem/extensions.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/statem/extensions_srvr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/statem/extensions_cust.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/statem/statem_clnt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/statem/extensions_clnt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/statem/statem_dtls.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/statem/statem_srvr.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/statem/statem_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/pqueue.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/s3_msg.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/s3_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_rsa.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_lib.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/bio_ssl.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/tls_srp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_cert.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_utst.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/t1_enc.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_txt.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/d1_srtp.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/record/ssl3_record.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/record/ssl3_record_tls13.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/record/rec_layer_d1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/record/dtls1_bitmap.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/record/ssl3_buffer.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/record/rec_layer_s3.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_stat.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_mcnf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_err.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_asn1.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_conf.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/d1_msg.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/packet.c
+  PyMod-$(PYTHON_VERSION)/Modules/openssl/ssl/ssl_sess.c
+
+
+[Sources.X64]
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/libffi_msvc/win64.asm | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/cpu.nasm | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/cpu_gcc.s | GCC
+
+[Sources.IA32]
+  PyMod-$(PYTHON_VERSION)/Modules/_ctypes/libffi_msvc/win32.c | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/cpu_ia32.nasm | MSFT
+  PyMod-$(PYTHON_VERSION)/Modules/cpu_ia32_gcc.s | GCC
+
+
+[BuildOptions]
+  # libffi: -I Include + libffi/include (LibFFI.inf-style)
+  # FULL (zlib, ctypes, OpenSSL)
+  # VS2022 now takes the same 64 MB stack path as GCC. The old PY_UEFI_MSVC_368_ENTRY
+  # workaround existed because edk2_switch_stack hung inside ShellCEntryLib; that was
+  # the NASM ABI mismatch (see MSFT NASM_FLAGS below) plus rsp-relative reads of
+  # UefiMain's frame across the switch, both fixed. Signed off on hardware with the
+  # full smoke sweep, including the deep imports that used to hang Shell exit.
+  #
+  # PY_UEFI_BOOT_TRACE is OFF (2026-09-09). The trace code stays in the tree,
+  # #ifdef-guarded, so re-enabling is adding /DPY_UEFI_BOOT_TRACE=1 to the line
+  # below and rebuilding -- AND uncommenting the matching [BuildOptions] block
+  # in AppPkg/AppPkg.dsc, which is DSC-level and therefore applies to this
+  # module too. Either one alone keeps the traces on. With it off the image prints nothing on a normal boot;
+  # error paths and the CPU-fault report are separate and unconditional. Note
+  # what you lose while it is off: the "switched stack min_rsp=... limit=...
+  # size=..." measurement (Smoke_Tests 1.1) and the before/skipping
+  # py_install_idt line that proves the IDT was installed, which makes VS2022
+  # diagnostically equal to GCC. Turn it back on for a throwaway build when
+  # investigating stack depth or entry-path behaviour.
+  MSFT:*_*_*_CC_FLAGS = /GL- /Oi- /wd4018 /wd4054 /wd4055 /wd4101 /wd4131 /wd4152 /wd4201 /wd4204 /wd4210 /wd4244 /wd4267 /wd4273 /wd4305 /wd4310 /wd4389 /wd4701 /wd4702 /wd4706 /wd4456 /wd4312 /wd4457 /wd4459 /wd4474 /wd4476 /I$(EDK2_LIBC_PATH)\AppPkg\Applications\Python\Python-3.12.13\Include /I$(EDK2_LIBC_PATH)\AppPkg\Applications\Python\Python-3.12.13\Include\internal /I$(EDK2_LIBC_PATH)\AppPkg\Applications\Python\Python-3.12.13\PyMod-3.12.13\efi\Include /I$(EDK2_LIBC_PATH)\AppPkg\Applications\Python\Python-3.12.13\Modules\_hacl\include /I$(EDK2_LIBC_PATH)\AppPkg\Applications\Python\Python-3.12.13\PyMod-3.12.13\Modules\zlib /I$(LIBFFI_MSVC_INC) /I$(OPENSSL_ROOT)\efi\include /I$(OPENSSL_ROOT) /I$(OPENSSL_ROOT)\include /DNO_MSABI_VA_FUNCS /DPy_BUILD_CORE /DHAVE_MEMMOVE /DUSE_PYEXPAT_CAPI /DXML_STATIC /DXML_POOR_ENTROPY /DUEFI_C_SOURCE /DPY_UEFI_MSVC_IDT=1 /DBUILD_PYTHON312_FULL=1 -D UEFI /WX-
+  GCC:*_*_*_CC_FLAGS = -Wno-unused-function -Wno-format -Wno-error -fno-strict-aliasing -I$(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/Include -I$(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/Include/internal -I$(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/efi/Include -I$(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/Modules/_hacl/include -I$(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/zlib -I$(LIBFFI_INC) -I$(LIBFFI_INT_INC) -I$(OPENSSL_ROOT)/efi/include -I$(OPENSSL_ROOT) -I$(OPENSSL_ROOT)/include -DNO_MSABI_VA_FUNCS -Wno-error=maybe-uninitialized -Wno-error=unused-but-set-variable -DPy_BUILD_CORE -DHAVE_MEMMOVE -DBUILD_PYTHON312_FULL=1
+  GCC:*_*_X64_PP_FLAGS = -I$(LIBFFI_INC) -I$(LIBFFI_INT_INC)
+  # edk2stack.nasm / edk2handler.nasm take their arguments in rdi/rsi (System V)
+  # by default. MSVC passes them in rcx/rdx, so an MSFT build needs this or
+  # edk2_switch_stack sets rsp from garbage. GCC is unaffected — no flag, no change.
+  MSFT:*_*_*_NASM_FLAGS = -DPY_UEFI_MS_ABI
+
+[BuildOptions.IA32]
+  MSFT:*_*_*_CC_FLAGS = /DUEFI_MSVC_32
+
+[BuildOptions.X64]
+  MSFT:*_*_*_CC_FLAGS = /DUEFI_MSVC_64
