@@ -29,6 +29,7 @@
 #include  <Library/UefiRuntimeServicesTableLib.h>
 #include  <Library/UefiBootServicesTableLib.h>
 #include  <Protocol/MpService.h>
+#include  <Protocol/MemoryAttribute.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -4351,6 +4352,202 @@ edk2_writepci(PyObject *self, PyObject *args)
   return Py_None;
 }
 
+/*
+  Firmware with strict memory protection, such as the Patina DXE core, marks
+  page 0 and all free memory EFI_MEMORY_RP (not present) and image code
+  EFI_MEMORY_RO. A direct physical access to such a page faults. The helpers
+  below use the EFI Memory Attribute Protocol to clear those attributes on the
+  pages being accessed and restore them afterwards. If the protocol is not
+  installed, the access is done as before.
+*/
+typedef struct {
+  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol;
+  UINT64                          Page[2];
+  UINT64                          Cleared[2];
+} PHYS_ACCESS;
+
+STATIC EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttribute;
+STATIC BOOLEAN                        mMemoryAttributeLocated;
+
+/**
+  Return the Memory Attribute Protocol, or NULL if it is not installed.
+
+  The lookup runs once and the result is cached, because LocateProtocol costs
+  much more than a small memory access. Patina removes the protocol only when
+  it enters compatibility mode, which needs an image without NX_COMPAT to be
+  loaded. Nothing in Python.efi loads images, so the cached value stays valid.
+**/
+STATIC
+EFI_MEMORY_ATTRIBUTE_PROTOCOL *
+GetMemoryAttributeProtocol (
+  VOID
+  )
+{
+  if (!mMemoryAttributeLocated) {
+    if (EFI_ERROR (gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&mMemoryAttribute))) {
+      mMemoryAttribute = NULL;
+    }
+
+    mMemoryAttributeLocated = TRUE;
+  }
+
+  return mMemoryAttribute;
+}
+
+/**
+  Check whether a whole range can be accessed without changing attributes.
+
+  One GetMemoryAttributes call covers every page of the range. It fails with
+  EFI_NO_MAPPING when the pages have different attributes, and the caller then
+  checks one page at a time.
+
+  @param[in]  Protocol  Memory Attribute Protocol, or NULL.
+  @param[in]  Address   Address of the first byte accessed.
+  @param[in]  Length    Bytes accessed.
+  @param[in]  Mask      Attributes that would block the access.
+
+  @retval TRUE   No page has a bit of Mask set, the range is empty, or there
+                 is no protocol to change attributes with.
+  @retval FALSE  The caller must check the pages one at a time.
+**/
+STATIC
+BOOLEAN
+PhysRangeIsAccessible (
+  IN EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol,
+  IN UINT64                         Address,
+  IN UINT64                         Length,
+  IN UINT64                         Mask
+  )
+{
+  UINT64  Base;
+  UINT64  End;
+  UINT64  Attributes;
+
+  if ((Protocol == NULL) || (Length == 0)) {
+    return TRUE;
+  }
+
+  Base = Address & ~(UINT64)EFI_PAGE_MASK;
+  End  = Address + Length;
+  if (End < Address) {
+    return FALSE;
+  }
+
+  End = (End + EFI_PAGE_MASK) & ~(UINT64)EFI_PAGE_MASK;
+  if (End <= Base) {
+    return FALSE;
+  }
+
+  if (EFI_ERROR (Protocol->GetMemoryAttributes (Protocol, Base, End - Base, &Attributes))) {
+    return FALSE;
+  }
+
+  return (Attributes & Mask) == 0;
+}
+
+/**
+  Make the pages under [Address, Address + Length) accessible for one access.
+
+  On each page, the bits of Mask that are set (EFI_MEMORY_RP for reads, plus
+  EFI_MEMORY_RO for writes) are cleared and recorded in Access->Cleared, so
+  PhysAccessEnd restores exactly those bits and leaves other pages alone.
+
+  The range can cover two pages because a single unaligned 32-bit access can
+  cross a page boundary. A dword at 0x...FFE uses bytes FFE-FFF of page N and
+  000-001 of page N+1, and the CPU needs both pages present while that one
+  instruction runs, so both are opened together. A 4-byte aligned access
+  never crosses a page. Byte copies split their range with PhysChunk, so they
+  always pass a single page.
+
+  @param[out] Access    Receives the pages and the attributes cleared on them.
+  @param[in]  Protocol  Memory Attribute Protocol, or NULL to change nothing.
+  @param[in]  Address   Address of the first byte accessed.
+  @param[in]  Length    Bytes accessed. Must be non-zero and must not span
+                        more than two pages.
+  @param[in]  Mask      Attributes to clear if they are set.
+**/
+STATIC
+VOID
+PhysAccessBegin (
+  OUT PHYS_ACCESS                    *Access,
+  IN  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol,
+  IN  UINT64                         Address,
+  IN  UINTN                          Length,
+  IN  UINT64                         Mask
+  )
+{
+  UINTN   Index;
+  UINT64  Attributes;
+
+  Access->Protocol   = Protocol;
+  Access->Page[0]    = Address & ~(UINT64)EFI_PAGE_MASK;
+  Access->Page[1]    = (Address + Length - 1) & ~(UINT64)EFI_PAGE_MASK;
+  Access->Cleared[0] = 0;
+  Access->Cleared[1] = 0;
+
+  if (Protocol == NULL) {
+    return;
+  }
+
+  for (Index = 0; Index < 2; Index++) {
+    if ((Index == 1) && (Access->Page[1] == Access->Page[0])) {
+      break;
+    }
+
+    if (EFI_ERROR (Protocol->GetMemoryAttributes (Protocol, Access->Page[Index], EFI_PAGE_SIZE, &Attributes))) {
+      continue;
+    }
+
+    Attributes &= Mask;
+    if ((Attributes != 0) &&
+        !EFI_ERROR (Protocol->ClearMemoryAttributes (Protocol, Access->Page[Index], EFI_PAGE_SIZE, Attributes)))
+    {
+      Access->Cleared[Index] = Attributes;
+    }
+  }
+}
+
+/**
+  Set again the attributes that PhysAccessBegin cleared.
+
+  @param[in]  Access  The record filled in by PhysAccessBegin.
+**/
+STATIC
+VOID
+PhysAccessEnd (
+  IN PHYS_ACCESS  *Access
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < 2; Index++) {
+    if (Access->Cleared[Index] != 0) {
+      Access->Protocol->SetMemoryAttributes (Access->Protocol, Access->Page[Index], EFI_PAGE_SIZE, Access->Cleared[Index]);
+    }
+  }
+}
+
+/**
+  Return the bytes from Address to the end of its page, capped at Remaining.
+
+  The byte copy loops use this so each PhysAccessBegin call covers one page.
+
+  @param[in]  Address    Current address in the copy.
+  @param[in]  Remaining  Bytes still to copy.
+**/
+STATIC
+int
+PhysChunk (
+  IN UINT64  Address,
+  IN int     Remaining
+  )
+{
+  UINT64  ToPageEnd;
+
+  ToPageEnd = EFI_PAGE_SIZE - (Address & EFI_PAGE_MASK);
+  return (ToPageEnd < (UINT64)Remaining) ? (int)ToPageEnd : Remaining;
+}
+
 PyDoc_STRVAR(efi_readmem__doc__,
 "readmem(addr_lo, addr_hi, len) -> ByteString\n\
 Read the given memory address.");
@@ -4361,7 +4558,9 @@ posix_readmem(PyObject *self, PyObject *args)
   PyObject  *data;
   UINT32     addr_lo, addr_hi;
   char      *buffer, *cbuffer, *addr;
-  int        len, index;
+  int        len, index, chunk;
+  PHYS_ACCESS                    Access;
+  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol;
 
   if (!PyArg_ParseTuple(args, "III", &addr_lo, &addr_hi, &len))
     return NULL;
@@ -4381,10 +4580,25 @@ posix_readmem(PyObject *self, PyObject *args)
 
   Py_BEGIN_ALLOW_THREADS
 
-  while(index--){
-    *cbuffer = *addr;
-    cbuffer++;
-    addr++;
+  Protocol = GetMemoryAttributeProtocol ();
+  if (PhysRangeIsAccessible (Protocol, (UINT64)(UINTN)addr, (UINT64)index, EFI_MEMORY_RP)) {
+    // Nothing in the range is protected: copy directly and skip the loop below.
+    for (; index > 0; index--){
+      *cbuffer = *addr;
+      cbuffer++;
+      addr++;
+    }
+  }
+  while(index > 0){
+    chunk = PhysChunk ((UINT64)(UINTN)addr, index);
+    index -= chunk;
+    PhysAccessBegin (&Access, Protocol, (UINT64)(UINTN)addr, chunk, EFI_MEMORY_RP);
+    while(chunk--){
+      *cbuffer = *addr;
+      cbuffer++;
+      addr++;
+    }
+    PhysAccessEnd (&Access);
   }
 
   Py_END_ALLOW_THREADS
@@ -4404,6 +4618,7 @@ posix_readmem_dword(PyObject *self, PyObject *args)
 {
   unsigned int result, *addr;
   UINT32 addr_lo, addr_hi;
+  PHYS_ACCESS  Access;
 
   if (!PyArg_ParseTuple(args, "II", &addr_lo, &addr_hi))
     return NULL;
@@ -4415,7 +4630,9 @@ posix_readmem_dword(PyObject *self, PyObject *args)
 #endif
 
   Py_BEGIN_ALLOW_THREADS
+  PhysAccessBegin (&Access, GetMemoryAttributeProtocol (), (UINT64)(UINTN)addr, sizeof (*addr), EFI_MEMORY_RP);
   result = *addr;
+  PhysAccessEnd (&Access);
   Py_END_ALLOW_THREADS
 
   return PyLong_FromUnsignedLong((unsigned long)result);
@@ -4429,8 +4646,10 @@ static PyObject *
 posix_writemem(PyObject *self, PyObject *args)
 {
   char *buf, *addr;
-  int len;
+  int len, chunk;
   UINT32 addr_lo, addr_hi;
+  PHYS_ACCESS                    Access;
+  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol;
 
   if (!PyArg_ParseTuple(args, "IIs#", &addr_lo, &addr_hi, &buf, &len))
     return NULL;
@@ -4442,10 +4661,25 @@ posix_writemem(PyObject *self, PyObject *args)
 #endif
 
   Py_BEGIN_ALLOW_THREADS
-  while(len--){
-    *addr = *buf;
-    buf++;
-    addr++;
+  Protocol = GetMemoryAttributeProtocol ();
+  if (PhysRangeIsAccessible (Protocol, (UINT64)(UINTN)addr, (UINT64)len, EFI_MEMORY_RP | EFI_MEMORY_RO)) {
+    // Nothing in the range is protected: copy directly and skip the loop below.
+    for (; len > 0; len--){
+      *addr = *buf;
+      buf++;
+      addr++;
+    }
+  }
+  while(len > 0){
+    chunk = PhysChunk ((UINT64)(UINTN)addr, len);
+    len -= chunk;
+    PhysAccessBegin (&Access, Protocol, (UINT64)(UINTN)addr, chunk, EFI_MEMORY_RP | EFI_MEMORY_RO);
+    while(chunk--){
+      *addr = *buf;
+      buf++;
+      addr++;
+    }
+    PhysAccessEnd (&Access);
   }
   Py_END_ALLOW_THREADS
 
@@ -4462,6 +4696,7 @@ posix_writemem_dword(PyObject *self, PyObject *args)
 {
   unsigned int *addr, val;
   UINT32 addr_lo, addr_hi;
+  PHYS_ACCESS  Access;
 
   if (!PyArg_ParseTuple(args, "III", &addr_lo, &addr_hi, &val))
     return NULL;
@@ -4473,7 +4708,9 @@ posix_writemem_dword(PyObject *self, PyObject *args)
 #endif
 
   Py_BEGIN_ALLOW_THREADS
+  PhysAccessBegin (&Access, GetMemoryAttributeProtocol (), (UINT64)(UINTN)addr, sizeof (*addr), EFI_MEMORY_RP | EFI_MEMORY_RO);
   *addr = val;
+  PhysAccessEnd (&Access);
   Py_END_ALLOW_THREADS
 
   Py_INCREF(Py_None);

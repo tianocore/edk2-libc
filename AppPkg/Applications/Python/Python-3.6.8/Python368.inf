@@ -49,6 +49,7 @@
 
 [Protocols]
   gEfiMpServiceProtocolGuid           ## CONSUMES
+  gEfiMemoryAttributeProtocolGuid     ## SOMETIMES_CONSUMES
 
 [FixedPcd]
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x0F
