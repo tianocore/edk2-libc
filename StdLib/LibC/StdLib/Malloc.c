@@ -255,11 +255,12 @@ realloc(void *Ptr, size_t ReqSize)
              Ptr, Head->Signature, CPOOL_HEAD_SIGNATURE));
       return NULL;
     }
-    OldSize = (size_t)Head->Size;
+    // Head->Size includes the pool header; only the Data portion is usable.
+    OldSize = (size_t)(Head->Size - OFFSET_OF (CPOOL_HEAD, Data));
   }
 
   // At this point, Ptr is either NULL or a valid pointer to an allocated space
-  NewSize = (size_t)(ReqSize + (sizeof(CPOOL_HEAD)));
+  NewSize = ReqSize;
 
   if( ReqSize > 0) {
     RetVal = malloc(NewSize); // Get the NEW memory region
