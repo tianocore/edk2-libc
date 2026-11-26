@@ -4536,16 +4536,16 @@ PhysAccessEnd (
   @param[in]  Remaining  Bytes still to copy.
 **/
 STATIC
-int
+Py_ssize_t
 PhysChunk (
-  IN UINT64  Address,
-  IN int     Remaining
+  IN UINT64      Address,
+  IN Py_ssize_t  Remaining
   )
 {
   UINT64  ToPageEnd;
 
   ToPageEnd = EFI_PAGE_SIZE - (Address & EFI_PAGE_MASK);
-  return (ToPageEnd < (UINT64)Remaining) ? (int)ToPageEnd : Remaining;
+  return (ToPageEnd < (UINT64)Remaining) ? (Py_ssize_t)ToPageEnd : Remaining;
 }
 
 PyDoc_STRVAR(efi_readmem__doc__,
@@ -4558,7 +4558,8 @@ posix_readmem(PyObject *self, PyObject *args)
   PyObject  *data;
   UINT32     addr_lo, addr_hi;
   char      *buffer, *cbuffer, *addr;
-  int        len, index, chunk;
+  int        len;
+  Py_ssize_t index, chunk;
   PHYS_ACCESS                    Access;
   EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol;
 
@@ -4603,7 +4604,7 @@ posix_readmem(PyObject *self, PyObject *args)
 
   Py_END_ALLOW_THREADS
 
-  data = Py_BuildValue("y#", buffer, len);
+  data = Py_BuildValue("y#", buffer, (Py_ssize_t)len);
   free(buffer);
 
   return data;
@@ -4646,7 +4647,7 @@ static PyObject *
 posix_writemem(PyObject *self, PyObject *args)
 {
   char *buf, *addr;
-  int len, chunk;
+  Py_ssize_t len, chunk;
   UINT32 addr_lo, addr_hi;
   PHYS_ACCESS                    Access;
   EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol;
@@ -4728,7 +4729,7 @@ MiscRT_GetVariable(PyObject *self, PyObject *args)
   PyObject     *data_out;
   CHAR16       *VariableName;
   EFI_GUID      VendorGuid;
-  UINT32        GuidSize;
+  Py_ssize_t    GuidSize;
   UINT32        Attributes;
   UINT64        DataSize;
   char         *Data;
@@ -4742,15 +4743,16 @@ MiscRT_GetVariable(PyObject *self, PyObject *args)
 
   StrToGuid(GuidIn, &VendorGuid);
 
-  Data = malloc(DataSize);
+  Data = malloc(DataSize ? (size_t)DataSize : 1);
   if (!Data)
-    return NULL;
+    return PyErr_NoMemory();
 
   Py_BEGIN_ALLOW_THREADS
   Status = gRT->GetVariable(VariableName, &VendorGuid, &Attributes, (UINTN *)&DataSize, (void*)Data);
   Py_END_ALLOW_THREADS
 
-  data_out = Py_BuildValue("(IIy#K)", (UINT32)Status, Attributes, Data, DataSize, DataSize);
+  // On failure DataSize may hold the required size, which is larger than Data.
+  data_out = Py_BuildValue("(IIy#K)", (UINT32)Status, Attributes, Data, EFI_ERROR (Status) ? 0 : (Py_ssize_t)DataSize, DataSize);
   free(Data);
 
   return data_out;
@@ -4765,15 +4767,23 @@ PyObject *
 MiscRT_GetNextVariableName(PyObject *self, PyObject *args)
 {
   UINT64        NameSize;
+  UINTN         BufferSize;
   CHAR16       *VariableName, *NameIn;
-  UINT32        GuidSize, VariableNameSize, i;
+  Py_ssize_t    GuidSize, VariableNameSize;
+  UINT32        i;
   EFI_GUID      VendorGuid;
   EFI_STATUS    Status;
   const char   *GuidIn;
   char         *VendorGuidPtr, *GuidOut[37];
+  PyObject     *result;
 
   if(!PyArg_ParseTuple(args, "Ky#s#", &NameSize, &NameIn, &VariableNameSize, &GuidIn, &GuidSize))
   {
+    return NULL;
+  }
+
+  if (GuidSize != sizeof(VendorGuid)) {
+    PyErr_SetString(PyExc_ValueError, "GUID must be 16 bytes");
     return NULL;
   }
 
@@ -4781,17 +4791,26 @@ MiscRT_GetNextVariableName(PyObject *self, PyObject *args)
   for (i=0; i<sizeof(VendorGuid); i++)
     VendorGuidPtr[i] = GuidIn[i];
 
-  for (i=0; i<NameSize && NameIn[i] != (CHAR16)0; i++)
-    VariableName[i] = NameIn[i];
-  VariableName[i] = NameIn[i];
+  // NameSize is the size in bytes of the buffer that receives the next name.
+  // The buffer must also hold the input name. One extra CHAR16 keeps the
+  // result terminated even if the firmware fails.
+  BufferSize = (UINTN)NameSize;
+  if (BufferSize < (UINTN)VariableNameSize)
+    BufferSize = (UINTN)VariableNameSize;
+  VariableName = calloc(BufferSize + sizeof(CHAR16), 1);
+  if (VariableName == NULL)
+    return PyErr_NoMemory();
+  memcpy(VariableName, NameIn, VariableNameSize);
 
   Py_BEGIN_ALLOW_THREADS
-  Status = gRT->GetNextVariableName((UINTN *)&NameSize, (CHAR16 *)VariableName, &VendorGuid);
+  Status = gRT->GetNextVariableName(&BufferSize, VariableName, &VendorGuid);
   Py_END_ALLOW_THREADS
 
   GuidToStr((EFI_GUID *)&VendorGuid, (UINT8 *)GuidOut);
 
-  return Py_BuildValue("(IuKs)", (UINT32) Status, VariableName, NameSize, &GuidOut);
+  result = Py_BuildValue("(IuKs)", (UINT32) Status, VariableName, (UINT64)BufferSize, &GuidOut);
+  free(VariableName);
+  return result;
 }
 
 PyDoc_STRVAR(MiscRT_SetVariable__doc__,
@@ -4803,17 +4822,22 @@ PyObject *
 MiscRT_SetVariable(PyObject *self, PyObject *args)
 {
   CHAR16       *VariableName;
-  UINT64        DataSize;
+  UINT32        DataSize;
   char         *Data, *guidptr, *VendorGuidPtr;
   char         *GuidOut[37];
   EFI_STATUS    Status;
   EFI_GUID      VendorGuid;
   UINT32        Attributes;
-  UINT32        GuidSize, strDataSize;
+  Py_ssize_t    GuidSize, strDataSize;
   const CHAR16 *GuidIn;
 
   if(!PyArg_ParseTuple(args, "uu#Is#I", &VariableName, &GuidIn, &GuidSize, &Attributes, &Data, &strDataSize, &DataSize))
   {
+    return NULL;
+  }
+
+  if ((Py_ssize_t)DataSize > strDataSize) {
+    PyErr_SetString(PyExc_ValueError, "DataSize is larger than Data");
     return NULL;
   }
 
@@ -4826,7 +4850,7 @@ MiscRT_SetVariable(PyObject *self, PyObject *args)
   GuidToStr((EFI_GUID *)&VendorGuid, (UINT8 *)GuidOut);
 
 //   return Py_BuildValue("(IKu#)", (UINT32) Status, DataSize, &VendorGuid, sizeof(VendorGuid));
-  return Py_BuildValue("(IKs)", (UINT32) Status, DataSize, &GuidOut);
+  return Py_BuildValue("(IKs)", (UINT32) Status, (UINT64)DataSize, &GuidOut);
 }
 
 
