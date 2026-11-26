@@ -1,7 +1,10 @@
-/*
- * UEFI + MSVC: CRT intrinsics and DSO entry points not provided by EDK2.
- * GCC uses portable OpenSSL macros; libcrypto is built without dso/*.c.
- */
+/** @file
+    UEFI + MSVC: CRT intrinsics and DSO entry points not provided by EDK2.
+    GCC uses portable OpenSSL macros; libcrypto is built without dso/*.c.
+
+    Copyright (c) 2011-2026, Intel Corporation. All rights reserved.<BR>
+    SPDX-License-Identifier: BSD-2-Clause-Patent
+**/
 
 #include <errno.h>
 #include <stddef.h>

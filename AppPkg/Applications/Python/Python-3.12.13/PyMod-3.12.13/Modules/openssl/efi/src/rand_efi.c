@@ -1,9 +1,12 @@
-/*
- * OpenSSL RAND pool hooks for UEFI (EFI RNG / urandom fallback).
- *
- * Do not call OPENSSL_ia32_rdseed_bytes from here without the correct
- * rand_rdrand.nasm ABI; use uefi_urandom for firmware entropy.
- */
+/** @file
+    OpenSSL RAND pool hooks for UEFI (EFI RNG / urandom fallback).
+
+    Do not call OPENSSL_ia32_rdseed_bytes from here without the correct
+    rand_rdrand.nasm ABI; use uefi_urandom for firmware entropy.
+
+    Copyright (c) 2011-2026, Intel Corporation. All rights reserved.<BR>
+    SPDX-License-Identifier: BSD-2-Clause-Patent
+**/
 
 #include <stddef.h>
 #include <sys/types.h>

@@ -1,0 +1,18 @@
+Python 3.12.13 AppPkg — upstream PR scope (PyMod / build wiring)
+================================================================
+
+This change set is intended for public edk2-libc. It wires only:
+
+  - AppPkg.dsc: BUILD_PYTHON312 / BUILD_PYTHON312_FULL → Python312_MIN.inf
+    or Python312.inf (alongside existing BUILD_PYTHON368 and stock samples)
+  - AppPkg.dec: include paths for Python-3.12.13 + PyMod efi Include + _hacl
+  - PyMod-3.12.13 overlays, packaging helpers, and UEFI-adapted vendor trees
+    under PyMod-3.12.13/Modules/ (see Modules/THIRD_PARTY_NOTICES.txt)
+
+Follow-on PRs (not in this change set):
+
+  - StdLib source patches (separate patches PR)
+  - Broader documentation PR (build guides / Readme refresh)
+
+Stock samples remaining in AppPkg.dsc (Hello, Main, Enquire, ArithChk,
+OrderedCollectionTest, optional Lua) are pre-existing AppPkg content.

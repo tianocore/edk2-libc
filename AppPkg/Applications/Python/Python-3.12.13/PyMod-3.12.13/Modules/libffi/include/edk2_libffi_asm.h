@@ -1,7 +1,12 @@
-/* AppPkg monolithic Python312.inf: .S preprocess uses PP_RESP (application
-   cc flags). Host GCC may define __CET__ / expand _CET_ENDBR to opcodes the
-   EDK assembler step rejects. edk2-py312 builds the same sources in standalone
-   LibFFI.inf without PP_RESP. Include this last from unix64.S / win64.S. */
+/** @file
+    Neutralize CET macros for monolithic Python312.inf .S preprocess (PP_RESP).
+    Host GCC may expand _CET_ENDBR to opcodes the EDK assembler rejects.
+    Include this last from unix64.S / win64.S.
+
+    Copyright (c) 2011-2026, Intel Corporation. All rights reserved.<BR>
+    SPDX-License-Identifier: BSD-2-Clause-Patent
+**/
+
 #ifndef EDK2_LIBFFI_ASM_H
 #define EDK2_LIBFFI_ASM_H
 #ifdef __CET__

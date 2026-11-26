@@ -1,22 +1,31 @@
-Vendored OpenSSL 1.1.1f (UEFI libcrypto) — Phase 8.3
-=====================================================
+Vendored OpenSSL 1.1.1f (UEFI libcrypto / libssl)
+=================================================
 
-Standard reference: edk2-py312 submodule edk2-openssl @ 59db29b27df724b3af1fb5cbe49a3f9b9900e862
-(efi/LibOpenSSL/LibOpenSSL.inf). Upstream URL for provenance:
+Public upstream (license + version pin):
 
-  https://github.com/intel-sandbox/firmware.boot.uefi.python38.edk2-openssl
+  https://github.com/openssl/openssl/tree/OpenSSL_1_1_1f
+  Tag: OpenSSL_1_1_1f
 
-Layout in this tree (mirrors edk2-openssl repo root):
+UEFI deltas (not an unmodified upstream drop):
+  - efi/ packaging glue (opensslconf, rand_efi, MSVC helpers, INF stubs)
+  - OPENSSL_SYS_UEFI / UEFI_C_SOURCE conditionals in selected crypto/ssl files
+  - Python312.inf compiles a subset of this tree (FULL build only)
+
+UEFI packaging of this 1.1.1f tree follows the historical LibOpenSSL.inf-style
+layout used by Python UEFI ports (crypto/, ssl/, engines/, include/, efi/ glue).
+Refresh from a matching OpenSSL 1.1.1f UEFI tree and keep Python312.inf
+[Sources] in sync. OpenSSL 3.x is a separate port.
+
+Layout in this tree:
 
   e_os.h             OpenSSL internal OS abstraction (required on -I vendor root)
   crypto/            libcrypto sources (subset compiled — see Python312.inf)
-  ssl/               libssl sources (Phase 8.4 — see Python312.inf)
+  ssl/               libssl sources (see Python312.inf)
   engines/           engine stubs referenced by LibOpenSSL.inf
   include/           public OpenSSL headers (<openssl/*.h>)
   efi/include/       UEFI opensslconf.h, buildinf.h, dso_conf.h
   efi/src/           rand_efi.c, eng_dyn.c, ui_openssl.c (LibOpenSSL glue)
-
-Phase 8.3 links **libcrypto only**; Phase 8.4 adds **libssl** (`ssl/`) and `Modules/_ssl.c`.
+  LICENSE            OpenSSL 1.1.1f dual OpenSSL + SSLeay license text
 
 Monolithic Python312.inf [BuildOptions] (match LibOpenSSL.inf):
 
@@ -27,9 +36,4 @@ Monolithic Python312.inf [BuildOptions] (match LibOpenSSL.inf):
 Built-in: Modules/_hashopenssl.c registers as **_hashlib** (UEFI_C_SOURCE allows
 non-threaded OpenSSL via threads_none.c).
 
-License: OpenSSL license in LICENSE at edk2-openssl root (also under include/).
-
-Refresh (1.1.1 line only): sync crypto/, ssl/, engines/, include/, efi/, and
-repo-root e_os.h from a matching UEFI edk2-openssl tree; update the OpenSSL
-[Sources] entries in Python312.inf to match that tree's LibOpenSSL.inf.
-OpenSSL 3.x is a separate port (new vendor + INF + _ssl/_hashlib glue).
+License: see LICENSE in this directory. Also see Modules/THIRD_PARTY_NOTICES.txt.

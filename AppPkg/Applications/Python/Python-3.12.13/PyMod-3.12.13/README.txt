@@ -1,4 +1,4 @@
-PyMod-3.12.13 ? UEFI overlays for Python 3.12.13 (AppPkg)
+PyMod-3.12.13 — UEFI overlays for Python 3.12.13 (AppPkg)
 
 Source of truth for all UEFI-specific C, headers, and stdlib Python patches.
 The stock tree under Python-3.12.13/ should match upstream CPython 3.12.13 for
@@ -10,8 +10,9 @@ copies PyMod *.h and *.py into the CPython tree (see Py312ReadMe.txt).
 
 EFI application glue lives only under PyMod-3.12.13/efi/ (not Python-3.12.13/efi/).
 
-Phase 8 (FULL): ctypes, ssl, hashlib, zlib, and readline are vendored under
-PyMod-3.12.13/Modules/ and enabled in Modules/config.c + Python312.inf.
+FULL builds (BUILD_PYTHON312_FULL=TRUE): ctypes, ssl, hashlib, zlib, and readline
+are vendored under PyMod-3.12.13/Modules/ and enabled in Modules/config.c +
+Python312.inf. MIN builds omit those vendor libraries (Python312_MIN.inf).
 
 External / third-party library layout (mirror Python 3.6.8 AppPkg):
 
@@ -19,20 +20,21 @@ External / third-party library layout (mirror Python 3.6.8 AppPkg):
   (e.g. Modules/zlibmodule.c). Vendored library C sources and UEFI-adopted module
   trees live under PyMod-3.12.13/Modules/; Python312.inf compiles PyMod paths.
 
-  Phase 8.1 (done):
-    Modules/zlib/          edk2-zlib @ 8ae7f507 (INF: PyMod-$(PYTHON_VERSION)/Modules/zlib/*.c)
+    Modules/zlib/          zlib 1.2.11 UEFI packaging
+                           (https://github.com/madler/zlib/tree/v1.2.11;
+                            INF: PyMod-$(PYTHON_VERSION)/Modules/zlib/*.c)
 
-  Phase 8.2 (done):
-    Modules/readline/      edk2-pyreadline @ 1e9face (readline.py + pyreadline/; staged to Lib by create_python_pkg)
+    Modules/readline/      pyreadline packaging (not GNU readline)
+                           (https://github.com/pyreadline/pyreadline;
+                            readline.py + pyreadline/; staged to Lib by create_python_pkg)
 
-  Phase 8.3 (done):
-    Modules/openssl/       libcrypto + _hashopenssl.c
+    Modules/openssl/       OpenSSL 1.1.1f libcrypto + _hashopenssl.c
+                           (https://github.com/openssl/openssl/tree/OpenSSL_1_1_1f)
 
-  Phase 8.4 (done):
     Modules/openssl/ssl/   libssl + _ssl.c
 
-  Phase 8.5 (done):
-    Modules/libffi/        + _ctypes / _ctypes_test
+    Modules/libffi/        libffi subset + _ctypes / _ctypes_test
+                           (https://github.com/libffi/libffi)
 
 Inventory (mirrored path = same relative path under PyMod-3.12.13/):
 
@@ -57,10 +59,10 @@ Inventory (mirrored path = same relative path under PyMod-3.12.13/):
   Modules/_sre/sre_lib.h
   Modules/_decimal/libmpdec/mpdecimal.h
   Modules/_hacl/include/krml/lowstar_endianness.h
-  Modules/zlib/              vendored zlib (edk2-zlib 8ae7f507)
-  Modules/readline/          vendored pyreadline (edk2-pyreadline 1e9face)
-  Modules/openssl/           vendored OpenSSL 1.1.1f (libcrypto + libssl)
-  Modules/libffi/            vendored libffi (_ctypes)
+  Modules/zlib/              vendored zlib 1.2.11 (see Modules/zlib/README.txt)
+  Modules/readline/          vendored pyreadline (see Modules/readline/README.txt)
+  Modules/openssl/           vendored OpenSSL 1.1.1f (see Modules/openssl/README.txt)
+  Modules/libffi/            vendored libffi (_ctypes; see Modules/libffi/README.txt)
   Lib/os.py, pathlib.py, site.py, uefipath.py, socket.py, statistics.py, rlcompleter.py
   Lib/ssl/               UEFI minimal package (__init__.py, _uefi_min.py, _stdlib.py)
   Lib/ctypes/uefi_pythonapi.py

@@ -1,7 +1,8 @@
 ## @file
-# Python312_MIN.inf — AppPkg MIN (no Phase 8); selected from AppPkg.dsc when BUILD_PYTHON312_FULL is FALSE
+# Python312_MIN.inf — AppPkg MIN build (no vendored zlib/ctypes/OpenSSL/libffi).
+# Selected from AppPkg.dsc when BUILD_PYTHON312_FULL is FALSE.
 #
-# Generated during AppPkg migration. ENTRY_POINT = UefiMain.
+# ENTRY_POINT = UefiMain.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
@@ -14,12 +15,8 @@
   ENTRY_POINT                 = UefiMain
 
   DEFINE PYTHON_VERSION       = 3.12.13
-  DEFINE LIBFFI_INC           = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/libffi/include
-  DEFINE OPENSSL_ROOT       = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/openssl
-  DEFINE LIBFFI_INT_INC       = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/libffi/libffi/include
-  # MSVC _ctypes uses libffi_msvc (Python368 pattern), not vendored edk2-libffi headers
-  DEFINE LIBFFI_MSVC_INC      = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/_ctypes/libffi_msvc
-  # VS2022 Iteration 1 MIN — no zlib/ctypes/OpenSSL (see Python312_MIN.inf)
+  # MIN omits vendor include paths for zlib/ctypes/OpenSSL/libffi. FULL uses
+  # Python312.inf. py312_openssl_uefi.c below is a no-op stub without FULL.
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -323,7 +320,7 @@
 
 
 [BuildOptions]
-  # Iteration 1 MIN — no Phase 8 (zlib, ctypes, OpenSSL)
+  # MIN — no vendored zlib/ctypes/OpenSSL
   #
   # PY_UEFI_BOOT_TRACE is OFF (2026-09-09), matching Python312.inf. The trace
   # code stays in the tree, #ifdef-guarded, so re-enabling is adding

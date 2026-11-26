@@ -28,7 +28,7 @@
   DEFINE DEBUG_PRINT_ERROR_LEVEL  = 0x80000040  # Flags to control amount of debug output
   DEFINE DEBUG_PROPERTY_MASK      = 0
 
-  # Python 3.12: FALSE = Iteration 1 MIN (no Phase 8). FULL: build -D BUILD_PYTHON312_FULL=TRUE
+  # Python 3.12: FALSE = MIN. FULL: build -D BUILD_PYTHON312_FULL=TRUE
   DEFINE BUILD_PYTHON312_FULL     = FALSE
 
 !include MdePkg/MdeLibs.dsc.inc
@@ -130,8 +130,8 @@
   !endif
 
 #### Conditional compilation of python312.inf by passing -D BUILD_PYTHON312
-#### MIN (default): build with -D BUILD_PYTHON312 only (Phase 8 omitted).
-#### FULL: add -D BUILD_PYTHON312_FULL=TRUE (zlib, ctypes, OpenSSL).
+#### MIN (default): build with -D BUILD_PYTHON312 only.
+#### FULL: add -D BUILD_PYTHON312_FULL=TRUE (zlib, ctypes, OpenSSL, libffi, readline).
   !if $(BUILD_PYTHON312)
     !if $(BUILD_PYTHON312_FULL) == TRUE
       AppPkg/Applications/Python/Python-3.12.13/Python312.inf

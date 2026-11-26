@@ -1,20 +1,26 @@
-Vendored pyreadline (UEFI readline module) — Phase 8.2
-======================================================
+Vendored pyreadline (UEFI readline module)
+==========================================
 
-Upstream tree (pinned commit):
+Public upstream project:
 
-  https://github.com/intel-sandbox/firmware.boot.uefi.python38.edk2-pyreadline
-  Commit: 1e9facede991aef35011afdb9c0ff0479fdebab9
+  https://github.com/pyreadline/pyreadline
+
+UEFI deltas (moderate — not stock Windows-only pyreadline):
+  - pyreadline/console/edk2.py backend for edk2console
+  - readline.py: PY_UEFI_READLINE opt-in stub when os.name == 'uefi'
+  - Small basemode.py docstring escape fix for CPython 3.12
 
 This is **not** GNU readline C sources. UEFI uses:
 
   - Built-in C module **edk2console** (Python312.inf / PyMod efi glue)
   - Pure Python **readline.py** + **pyreadline/** from this directory
 
-`create_python_pkg.sh` copies readline.py and pyreadline/ into EFI/lib/python3.12/
-so `import readline` works at runtime. No extra INF [Sources] for Phase 8.2.
+`create_python_pkg.sh` / `.bat` copies readline.py and pyreadline/ into
+EFI/lib/python3.12/ so `import readline` works at runtime. No extra INF
+[Sources] are required for readline packaging.
 
-License: doc/COPYING in upstream repo (copied as COPYING here).
+License: see COPYING in this directory (BSD-type).
+Also see Modules/THIRD_PARTY_NOTICES.txt.
 
-AppPkg delta vs 1e9face: `pyreadline/modes/basemode.py` docstring uses `\\space`
+AppPkg delta: `pyreadline/modes/basemode.py` docstring uses `\\space`
 (CPython 3.12 SyntaxWarning for `\space` in docstrings).

@@ -1,7 +1,7 @@
 ## @file
-# Python312.inf — AppPkg monolithic module (Phase 8.1: vendored edk2-zlib)
+# Python312.inf — AppPkg monolithic FULL module (vendored zlib/ctypes/OpenSSL/libffi).
 #
-# Generated during AppPkg migration. ENTRY_POINT = UefiMain.
+# ENTRY_POINT = UefiMain. MIN build uses Python312_MIN.inf.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
@@ -17,9 +17,9 @@
   DEFINE LIBFFI_INC           = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/libffi/include
   DEFINE OPENSSL_ROOT       = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/openssl
   DEFINE LIBFFI_INT_INC       = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/libffi/libffi/include
-  # MSVC _ctypes uses libffi_msvc (Python368 pattern), not vendored edk2-libffi headers
+  # MSVC _ctypes uses libffi_msvc (Python368 pattern), not Modules/libffi headers
   DEFINE LIBFFI_MSVC_INC      = $(EDK2_LIBC_PATH)/AppPkg/Applications/Python/Python-3.12.13/PyMod-3.12.13/Modules/_ctypes/libffi_msvc
-  # Monolithic FULL module (Phase 8). MIN build uses Python312_MIN.inf
+  # Monolithic FULL module. MIN build uses Python312_MIN.inf
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -331,7 +331,7 @@
 
   Modules/zlibmodule.c
 
-# Vendored zlib (PyMod — same layout as 3.6.8 Modules/zlib; sources from edk2-zlib @ 8ae7f507)
+# Vendored zlib 1.2.11 (PyMod — same layout as 3.6.8 Modules/zlib)
 PyMod-$(PYTHON_VERSION)/Modules/zlib
   PyMod-$(PYTHON_VERSION)/Modules/zlib/adler32.c
   PyMod-$(PYTHON_VERSION)/Modules/zlib/compress.c
@@ -349,16 +349,16 @@ PyMod-$(PYTHON_VERSION)/Modules/zlib
   PyMod-$(PYTHON_VERSION)/Modules/zlib/uncompr.c
   PyMod-$(PYTHON_VERSION)/Modules/zlib/zutil.c
 
-# Phase 8.2 — pyreadline vendored under PyMod/Modules/readline (staged by create_python_pkg.*)
+# pyreadline under PyMod/Modules/readline (staged by create_python_pkg.*)
 #  (uses built-in edk2console; not Modules/readline.c / GNU readline)
 
-# Phase 8.5 — vendored edk2-libffi + UEFI _ctypes (PyMod overlays from edk2-cpython)
+# Vendored libffi + UEFI _ctypes (GCC)
 PyMod-$(PYTHON_VERSION)/Modules/_ctypes/_ctypes.c | GCC
 PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callbacks.c | GCC
 PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callproc.c | GCC
 PyMod-$(PYTHON_VERSION)/Modules/_ctypes/cfield.c | GCC
 PyMod-$(PYTHON_VERSION)/Modules/_ctypes/stgdict.c | GCC
-# No malloc_closure.c — edk2-cpython PythonExtLib.inf uses libffi ffi_closure_alloc (HAVE_FFI_CLOSURE_ALLOC).
+# No malloc_closure.c on GCC — use libffi ffi_closure_alloc (HAVE_FFI_CLOSURE_ALLOC).
 PyMod-$(PYTHON_VERSION)/Modules/_ctypes/_ctypes_test.c | GCC
 
 PyMod-$(PYTHON_VERSION)/Modules/libffi
@@ -372,7 +372,7 @@ PyMod-$(PYTHON_VERSION)/Modules/libffi
   PyMod-$(PYTHON_VERSION)/Modules/libffi/src/x86/unix64.S | GCC
   PyMod-$(PYTHON_VERSION)/Modules/libffi/src/x86/win64.S | GCC
 
-# Phase 8.5 — VS2022: libffi_msvc + _ctypes (Python368.inf pattern)
+# VS2022: libffi_msvc + _ctypes (Python368.inf pattern)
   PyMod-$(PYTHON_VERSION)/Modules/_ctypes/_ctypes.c | MSFT
   PyMod-$(PYTHON_VERSION)/Modules/_ctypes/stgdict.c | MSFT
   PyMod-$(PYTHON_VERSION)/Modules/_ctypes/libffi_msvc/prep_cif.c | MSFT
@@ -383,7 +383,7 @@ PyMod-$(PYTHON_VERSION)/Modules/libffi
   PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callproc.c | MSFT
   PyMod-$(PYTHON_VERSION)/Modules/_ctypes/callbacks.c | MSFT
 
-# Phase 8.3 — vendored edk2-openssl libcrypto + _hashlib (_hashopenssl.c)
+# Vendored OpenSSL 1.1.1f libcrypto + _hashlib (_hashopenssl.c)
   PyMod-3.12.13/Modules/_hashopenssl.c
 
 # libcrypto sources — from LibOpenSSL.inf minus ssl/; plus rand_rdrand.nasm (rand_efi.c)
@@ -1021,7 +1021,7 @@ PyMod-$(PYTHON_VERSION)/Modules/openssl
   PyMod-$(PYTHON_VERSION)/Modules/openssl/efi/src/openssl_uefi_msvc.c | MSFT
   PyMod-$(PYTHON_VERSION)/Modules/openssl/efi/src/rand_rdrand.nasm
 
-# Phase 8.4 — libssl + _ssl (same vendored OpenSSL tree as 8.3)
+# libssl + _ssl (same vendored OpenSSL tree)
   PyMod-3.12.13/Modules/_ssl.c
 
 # libssl sources (44 files) — from LibOpenSSL.inf ssl/ only
@@ -1083,8 +1083,8 @@ PyMod-$(PYTHON_VERSION)/Modules/openssl
 
 
 [BuildOptions]
-  # libffi: same -I as edk2-py312 edk2-libffi/EFI/LibFFI/LibFFI.inf (Include + libffi/include)
-  # Phase 8 FULL (zlib, ctypes, OpenSSL)
+  # libffi: -I Include + libffi/include (LibFFI.inf-style)
+  # FULL (zlib, ctypes, OpenSSL)
   # VS2022 now takes the same 64 MB stack path as GCC. The old PY_UEFI_MSVC_368_ENTRY
   # workaround existed because edk2_switch_stack hung inside ShellCEntryLib; that was
   # the NASM ABI mismatch (see MSFT NASM_FLAGS below) plus rsp-relative reads of
