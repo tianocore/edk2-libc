@@ -29,6 +29,7 @@
 #include  <Library/UefiRuntimeServicesTableLib.h>
 #include  <Library/UefiBootServicesTableLib.h>
 #include  <Protocol/MpService.h>
+#include  <Protocol/MemoryAttribute.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -4351,6 +4352,202 @@ edk2_writepci(PyObject *self, PyObject *args)
   return Py_None;
 }
 
+/*
+  Firmware with strict memory protection, such as the Patina DXE core, marks
+  page 0 and all free memory EFI_MEMORY_RP (not present) and image code
+  EFI_MEMORY_RO. A direct physical access to such a page faults. The helpers
+  below use the EFI Memory Attribute Protocol to clear those attributes on the
+  pages being accessed and restore them afterwards. If the protocol is not
+  installed, the access is done as before.
+*/
+typedef struct {
+  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol;
+  UINT64                          Page[2];
+  UINT64                          Cleared[2];
+} PHYS_ACCESS;
+
+STATIC EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttribute;
+STATIC BOOLEAN                        mMemoryAttributeLocated;
+
+/**
+  Return the Memory Attribute Protocol, or NULL if it is not installed.
+
+  The lookup runs once and the result is cached, because LocateProtocol costs
+  much more than a small memory access. Patina removes the protocol only when
+  it enters compatibility mode, which needs an image without NX_COMPAT to be
+  loaded. Nothing in Python.efi loads images, so the cached value stays valid.
+**/
+STATIC
+EFI_MEMORY_ATTRIBUTE_PROTOCOL *
+GetMemoryAttributeProtocol (
+  VOID
+  )
+{
+  if (!mMemoryAttributeLocated) {
+    if (EFI_ERROR (gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&mMemoryAttribute))) {
+      mMemoryAttribute = NULL;
+    }
+
+    mMemoryAttributeLocated = TRUE;
+  }
+
+  return mMemoryAttribute;
+}
+
+/**
+  Check whether a whole range can be accessed without changing attributes.
+
+  One GetMemoryAttributes call covers every page of the range. It fails with
+  EFI_NO_MAPPING when the pages have different attributes, and the caller then
+  checks one page at a time.
+
+  @param[in]  Protocol  Memory Attribute Protocol, or NULL.
+  @param[in]  Address   Address of the first byte accessed.
+  @param[in]  Length    Bytes accessed.
+  @param[in]  Mask      Attributes that would block the access.
+
+  @retval TRUE   No page has a bit of Mask set, the range is empty, or there
+                 is no protocol to change attributes with.
+  @retval FALSE  The caller must check the pages one at a time.
+**/
+STATIC
+BOOLEAN
+PhysRangeIsAccessible (
+  IN EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol,
+  IN UINT64                         Address,
+  IN UINT64                         Length,
+  IN UINT64                         Mask
+  )
+{
+  UINT64  Base;
+  UINT64  End;
+  UINT64  Attributes;
+
+  if ((Protocol == NULL) || (Length == 0)) {
+    return TRUE;
+  }
+
+  Base = Address & ~(UINT64)EFI_PAGE_MASK;
+  End  = Address + Length;
+  if (End < Address) {
+    return FALSE;
+  }
+
+  End = (End + EFI_PAGE_MASK) & ~(UINT64)EFI_PAGE_MASK;
+  if (End <= Base) {
+    return FALSE;
+  }
+
+  if (EFI_ERROR (Protocol->GetMemoryAttributes (Protocol, Base, End - Base, &Attributes))) {
+    return FALSE;
+  }
+
+  return (Attributes & Mask) == 0;
+}
+
+/**
+  Make the pages under [Address, Address + Length) accessible for one access.
+
+  On each page, the bits of Mask that are set (EFI_MEMORY_RP for reads, plus
+  EFI_MEMORY_RO for writes) are cleared and recorded in Access->Cleared, so
+  PhysAccessEnd restores exactly those bits and leaves other pages alone.
+
+  The range can cover two pages because a single unaligned 32-bit access can
+  cross a page boundary. A dword at 0x...FFE uses bytes FFE-FFF of page N and
+  000-001 of page N+1, and the CPU needs both pages present while that one
+  instruction runs, so both are opened together. A 4-byte aligned access
+  never crosses a page. Byte copies split their range with PhysChunk, so they
+  always pass a single page.
+
+  @param[out] Access    Receives the pages and the attributes cleared on them.
+  @param[in]  Protocol  Memory Attribute Protocol, or NULL to change nothing.
+  @param[in]  Address   Address of the first byte accessed.
+  @param[in]  Length    Bytes accessed. Must be non-zero and must not span
+                        more than two pages.
+  @param[in]  Mask      Attributes to clear if they are set.
+**/
+STATIC
+VOID
+PhysAccessBegin (
+  OUT PHYS_ACCESS                    *Access,
+  IN  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol,
+  IN  UINT64                         Address,
+  IN  UINTN                          Length,
+  IN  UINT64                         Mask
+  )
+{
+  UINTN   Index;
+  UINT64  Attributes;
+
+  Access->Protocol   = Protocol;
+  Access->Page[0]    = Address & ~(UINT64)EFI_PAGE_MASK;
+  Access->Page[1]    = (Address + Length - 1) & ~(UINT64)EFI_PAGE_MASK;
+  Access->Cleared[0] = 0;
+  Access->Cleared[1] = 0;
+
+  if (Protocol == NULL) {
+    return;
+  }
+
+  for (Index = 0; Index < 2; Index++) {
+    if ((Index == 1) && (Access->Page[1] == Access->Page[0])) {
+      break;
+    }
+
+    if (EFI_ERROR (Protocol->GetMemoryAttributes (Protocol, Access->Page[Index], EFI_PAGE_SIZE, &Attributes))) {
+      continue;
+    }
+
+    Attributes &= Mask;
+    if ((Attributes != 0) &&
+        !EFI_ERROR (Protocol->ClearMemoryAttributes (Protocol, Access->Page[Index], EFI_PAGE_SIZE, Attributes)))
+    {
+      Access->Cleared[Index] = Attributes;
+    }
+  }
+}
+
+/**
+  Set again the attributes that PhysAccessBegin cleared.
+
+  @param[in]  Access  The record filled in by PhysAccessBegin.
+**/
+STATIC
+VOID
+PhysAccessEnd (
+  IN PHYS_ACCESS  *Access
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < 2; Index++) {
+    if (Access->Cleared[Index] != 0) {
+      Access->Protocol->SetMemoryAttributes (Access->Protocol, Access->Page[Index], EFI_PAGE_SIZE, Access->Cleared[Index]);
+    }
+  }
+}
+
+/**
+  Return the bytes from Address to the end of its page, capped at Remaining.
+
+  The byte copy loops use this so each PhysAccessBegin call covers one page.
+
+  @param[in]  Address    Current address in the copy.
+  @param[in]  Remaining  Bytes still to copy.
+**/
+STATIC
+Py_ssize_t
+PhysChunk (
+  IN UINT64      Address,
+  IN Py_ssize_t  Remaining
+  )
+{
+  UINT64  ToPageEnd;
+
+  ToPageEnd = EFI_PAGE_SIZE - (Address & EFI_PAGE_MASK);
+  return (ToPageEnd < (UINT64)Remaining) ? (Py_ssize_t)ToPageEnd : Remaining;
+}
+
 PyDoc_STRVAR(efi_readmem__doc__,
 "readmem(addr_lo, addr_hi, len) -> ByteString\n\
 Read the given memory address.");
@@ -4361,7 +4558,10 @@ posix_readmem(PyObject *self, PyObject *args)
   PyObject  *data;
   UINT32     addr_lo, addr_hi;
   char      *buffer, *cbuffer, *addr;
-  int        len, index;
+  int        len;
+  Py_ssize_t index, chunk;
+  PHYS_ACCESS                    Access;
+  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol;
 
   if (!PyArg_ParseTuple(args, "III", &addr_lo, &addr_hi, &len))
     return NULL;
@@ -4381,15 +4581,30 @@ posix_readmem(PyObject *self, PyObject *args)
 
   Py_BEGIN_ALLOW_THREADS
 
-  while(index--){
-    *cbuffer = *addr;
-    cbuffer++;
-    addr++;
+  Protocol = GetMemoryAttributeProtocol ();
+  if (PhysRangeIsAccessible (Protocol, (UINT64)(UINTN)addr, (UINT64)index, EFI_MEMORY_RP)) {
+    // Nothing in the range is protected: copy directly and skip the loop below.
+    for (; index > 0; index--){
+      *cbuffer = *addr;
+      cbuffer++;
+      addr++;
+    }
+  }
+  while(index > 0){
+    chunk = PhysChunk ((UINT64)(UINTN)addr, index);
+    index -= chunk;
+    PhysAccessBegin (&Access, Protocol, (UINT64)(UINTN)addr, chunk, EFI_MEMORY_RP);
+    while(chunk--){
+      *cbuffer = *addr;
+      cbuffer++;
+      addr++;
+    }
+    PhysAccessEnd (&Access);
   }
 
   Py_END_ALLOW_THREADS
 
-  data = Py_BuildValue("y#", buffer, len);
+  data = Py_BuildValue("y#", buffer, (Py_ssize_t)len);
   free(buffer);
 
   return data;
@@ -4404,6 +4619,7 @@ posix_readmem_dword(PyObject *self, PyObject *args)
 {
   unsigned int result, *addr;
   UINT32 addr_lo, addr_hi;
+  PHYS_ACCESS  Access;
 
   if (!PyArg_ParseTuple(args, "II", &addr_lo, &addr_hi))
     return NULL;
@@ -4415,7 +4631,9 @@ posix_readmem_dword(PyObject *self, PyObject *args)
 #endif
 
   Py_BEGIN_ALLOW_THREADS
+  PhysAccessBegin (&Access, GetMemoryAttributeProtocol (), (UINT64)(UINTN)addr, sizeof (*addr), EFI_MEMORY_RP);
   result = *addr;
+  PhysAccessEnd (&Access);
   Py_END_ALLOW_THREADS
 
   return PyLong_FromUnsignedLong((unsigned long)result);
@@ -4429,8 +4647,10 @@ static PyObject *
 posix_writemem(PyObject *self, PyObject *args)
 {
   char *buf, *addr;
-  int len;
+  Py_ssize_t len, chunk;
   UINT32 addr_lo, addr_hi;
+  PHYS_ACCESS                    Access;
+  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *Protocol;
 
   if (!PyArg_ParseTuple(args, "IIs#", &addr_lo, &addr_hi, &buf, &len))
     return NULL;
@@ -4442,10 +4662,25 @@ posix_writemem(PyObject *self, PyObject *args)
 #endif
 
   Py_BEGIN_ALLOW_THREADS
-  while(len--){
-    *addr = *buf;
-    buf++;
-    addr++;
+  Protocol = GetMemoryAttributeProtocol ();
+  if (PhysRangeIsAccessible (Protocol, (UINT64)(UINTN)addr, (UINT64)len, EFI_MEMORY_RP | EFI_MEMORY_RO)) {
+    // Nothing in the range is protected: copy directly and skip the loop below.
+    for (; len > 0; len--){
+      *addr = *buf;
+      buf++;
+      addr++;
+    }
+  }
+  while(len > 0){
+    chunk = PhysChunk ((UINT64)(UINTN)addr, len);
+    len -= chunk;
+    PhysAccessBegin (&Access, Protocol, (UINT64)(UINTN)addr, chunk, EFI_MEMORY_RP | EFI_MEMORY_RO);
+    while(chunk--){
+      *addr = *buf;
+      buf++;
+      addr++;
+    }
+    PhysAccessEnd (&Access);
   }
   Py_END_ALLOW_THREADS
 
@@ -4462,6 +4697,7 @@ posix_writemem_dword(PyObject *self, PyObject *args)
 {
   unsigned int *addr, val;
   UINT32 addr_lo, addr_hi;
+  PHYS_ACCESS  Access;
 
   if (!PyArg_ParseTuple(args, "III", &addr_lo, &addr_hi, &val))
     return NULL;
@@ -4473,7 +4709,9 @@ posix_writemem_dword(PyObject *self, PyObject *args)
 #endif
 
   Py_BEGIN_ALLOW_THREADS
+  PhysAccessBegin (&Access, GetMemoryAttributeProtocol (), (UINT64)(UINTN)addr, sizeof (*addr), EFI_MEMORY_RP | EFI_MEMORY_RO);
   *addr = val;
+  PhysAccessEnd (&Access);
   Py_END_ALLOW_THREADS
 
   Py_INCREF(Py_None);
@@ -4491,7 +4729,7 @@ MiscRT_GetVariable(PyObject *self, PyObject *args)
   PyObject     *data_out;
   CHAR16       *VariableName;
   EFI_GUID      VendorGuid;
-  UINT32        GuidSize;
+  Py_ssize_t    GuidSize;
   UINT32        Attributes;
   UINT64        DataSize;
   char         *Data;
@@ -4505,15 +4743,16 @@ MiscRT_GetVariable(PyObject *self, PyObject *args)
 
   StrToGuid(GuidIn, &VendorGuid);
 
-  Data = malloc(DataSize);
+  Data = malloc(DataSize ? (size_t)DataSize : 1);
   if (!Data)
-    return NULL;
+    return PyErr_NoMemory();
 
   Py_BEGIN_ALLOW_THREADS
   Status = gRT->GetVariable(VariableName, &VendorGuid, &Attributes, (UINTN *)&DataSize, (void*)Data);
   Py_END_ALLOW_THREADS
 
-  data_out = Py_BuildValue("(IIy#K)", (UINT32)Status, Attributes, Data, DataSize, DataSize);
+  // On failure DataSize may hold the required size, which is larger than Data.
+  data_out = Py_BuildValue("(IIy#K)", (UINT32)Status, Attributes, Data, EFI_ERROR (Status) ? 0 : (Py_ssize_t)DataSize, DataSize);
   free(Data);
 
   return data_out;
@@ -4528,15 +4767,23 @@ PyObject *
 MiscRT_GetNextVariableName(PyObject *self, PyObject *args)
 {
   UINT64        NameSize;
+  UINTN         BufferSize;
   CHAR16       *VariableName, *NameIn;
-  UINT32        GuidSize, VariableNameSize, i;
+  Py_ssize_t    GuidSize, VariableNameSize;
+  UINT32        i;
   EFI_GUID      VendorGuid;
   EFI_STATUS    Status;
   const char   *GuidIn;
   char         *VendorGuidPtr, *GuidOut[37];
+  PyObject     *result;
 
   if(!PyArg_ParseTuple(args, "Ky#s#", &NameSize, &NameIn, &VariableNameSize, &GuidIn, &GuidSize))
   {
+    return NULL;
+  }
+
+  if (GuidSize != sizeof(VendorGuid)) {
+    PyErr_SetString(PyExc_ValueError, "GUID must be 16 bytes");
     return NULL;
   }
 
@@ -4544,17 +4791,26 @@ MiscRT_GetNextVariableName(PyObject *self, PyObject *args)
   for (i=0; i<sizeof(VendorGuid); i++)
     VendorGuidPtr[i] = GuidIn[i];
 
-  for (i=0; i<NameSize && NameIn[i] != (CHAR16)0; i++)
-    VariableName[i] = NameIn[i];
-  VariableName[i] = NameIn[i];
+  // NameSize is the size in bytes of the buffer that receives the next name.
+  // The buffer must also hold the input name. One extra CHAR16 keeps the
+  // result terminated even if the firmware fails.
+  BufferSize = (UINTN)NameSize;
+  if (BufferSize < (UINTN)VariableNameSize)
+    BufferSize = (UINTN)VariableNameSize;
+  VariableName = calloc(BufferSize + sizeof(CHAR16), 1);
+  if (VariableName == NULL)
+    return PyErr_NoMemory();
+  memcpy(VariableName, NameIn, VariableNameSize);
 
   Py_BEGIN_ALLOW_THREADS
-  Status = gRT->GetNextVariableName((UINTN *)&NameSize, (CHAR16 *)VariableName, &VendorGuid);
+  Status = gRT->GetNextVariableName(&BufferSize, VariableName, &VendorGuid);
   Py_END_ALLOW_THREADS
 
   GuidToStr((EFI_GUID *)&VendorGuid, (UINT8 *)GuidOut);
 
-  return Py_BuildValue("(IuKs)", (UINT32) Status, VariableName, NameSize, &GuidOut);
+  result = Py_BuildValue("(IuKs)", (UINT32) Status, VariableName, (UINT64)BufferSize, &GuidOut);
+  free(VariableName);
+  return result;
 }
 
 PyDoc_STRVAR(MiscRT_SetVariable__doc__,
@@ -4566,17 +4822,22 @@ PyObject *
 MiscRT_SetVariable(PyObject *self, PyObject *args)
 {
   CHAR16       *VariableName;
-  UINT64        DataSize;
+  UINT32        DataSize;
   char         *Data, *guidptr, *VendorGuidPtr;
   char         *GuidOut[37];
   EFI_STATUS    Status;
   EFI_GUID      VendorGuid;
   UINT32        Attributes;
-  UINT32        GuidSize, strDataSize;
+  Py_ssize_t    GuidSize, strDataSize;
   const CHAR16 *GuidIn;
 
   if(!PyArg_ParseTuple(args, "uu#Is#I", &VariableName, &GuidIn, &GuidSize, &Attributes, &Data, &strDataSize, &DataSize))
   {
+    return NULL;
+  }
+
+  if ((Py_ssize_t)DataSize > strDataSize) {
+    PyErr_SetString(PyExc_ValueError, "DataSize is larger than Data");
     return NULL;
   }
 
@@ -4589,7 +4850,7 @@ MiscRT_SetVariable(PyObject *self, PyObject *args)
   GuidToStr((EFI_GUID *)&VendorGuid, (UINT8 *)GuidOut);
 
 //   return Py_BuildValue("(IKu#)", (UINT32) Status, DataSize, &VendorGuid, sizeof(VendorGuid));
-  return Py_BuildValue("(IKs)", (UINT32) Status, DataSize, &GuidOut);
+  return Py_BuildValue("(IKs)", (UINT32) Status, (UINT64)DataSize, &GuidOut);
 }
 
 
